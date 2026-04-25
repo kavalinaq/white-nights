@@ -6,7 +6,7 @@ CREATE TYPE moderation_action_type AS ENUM ('block_post', 'warn_user', 'ban_user
 CREATE TYPE chat_member_role AS ENUM ('member', 'owner');
 
 -- Tables
-CREATE TABLE users (
+CREATE TABLE "users" (
     user_id       BIGSERIAL PRIMARY KEY,
     nickname      VARCHAR(50) UNIQUE NOT NULL,
     email         VARCHAR(255) UNIQUE NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE users (
 
 CREATE TABLE posts (
     post_id     BIGSERIAL PRIMARY KEY,
-    user_id     BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
+    user_id     BIGINT REFERENCES "users"(user_id) ON DELETE CASCADE,
     image_url   VARCHAR(255),
     title       VARCHAR(255) NOT NULL,
     author      VARCHAR(255) NOT NULL,

@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/whitenights
+    url: jdbc:postgresql://localhost:5432/whitenights?stringtype=unspecified
     username: user
     password: password
   jpa:
@@ -23,3 +23,10 @@ logging:
   level:
     com.whitenights: DEBUG
     org.springframework.security: DEBUG
+
+auth:
+  jwt:
+    # Use a secure secret in production!
+    secret: "v9y$B&E)H@McQfTjWnZr4u7x!A%D*G-KaPdSgUkXp2s5v8y/B?E(H+MbQeThWmYq"
+    access-expiration-ms: 900000 # 15 minutes
+    refresh-expiration-ms: 1209600000 # 14 days

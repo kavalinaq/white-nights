@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import client from '../api/client';
 
 interface User {
   id: string;
@@ -13,6 +14,7 @@ interface AuthState {
   isAuthenticated: boolean;
   setAuth: (user: User, token: string) => void;
   logout: () => void;
+  checkAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -26,5 +28,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('access_token');
     set({ user: null, accessToken: null, isAuthenticated: false });
+  },
+  checkAuth: async () => {
+    try {
+      const response = await client.post('/auth/refresh');
+      const { user, accessToken } = response.data;
+      localStorage.setItem('access_token', accessToken);
+      set({ user, accessToken, isAuthenticated: true });
+    } catch (e) {
+      localStorage.removeItem('access_token');
+      set({ user: null, accessToken: null, isAuthenticated: false });
+    }
   },
 }));
