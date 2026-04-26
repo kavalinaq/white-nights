@@ -2,6 +2,7 @@ package com.whitenights.post.repository;
 
 import com.whitenights.post.domain.Post;
 import com.whitenights.auth.domain.User;
+import com.whitenights.user.domain.FollowStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -34,6 +35,22 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             """)
     List<Post> findByUserWithCursor(
             @Param("user") User user,
+            @Param("cursor") Long cursor,
+            org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
+            WHERE p.user IN (
+                SELECT f.followee FROM Follow f
+                WHERE f.follower = :viewer AND f.status = :status
+            )
+              AND p.isBlocked = false
+              AND (:cursor IS NULL OR p.postId < :cursor)
+            ORDER BY p.postId DESC
+            """)
+    List<Post> findFeedPosts(
+            @Param("viewer") User viewer,
+            @Param("status") FollowStatus status,
             @Param("cursor") Long cursor,
             org.springframework.data.domain.Pageable pageable);
 }
