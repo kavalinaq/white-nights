@@ -2,7 +2,9 @@ package com.whitenights.user.api;
 
 import com.whitenights.auth.domain.User;
 import com.whitenights.auth.repository.UserRepository;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.user.api.dto.FollowRequestResponse;
+import com.whitenights.user.api.dto.UserSummaryResponse;
 import com.whitenights.user.domain.FollowStatus;
 import com.whitenights.user.repository.FollowRepository;
 import com.whitenights.user.service.FollowService;
@@ -21,6 +23,38 @@ public class FollowController {
     private final FollowService followService;
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
+
+    @GetMapping("/{id}/followers")
+    public List<UserSummaryResponse> getFollowers(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "50") int limit) {
+        User target = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        return followRepository.findByFolloweeAndStatus(target, FollowStatus.accepted, PageRequest.of(0, Math.min(limit, 100)))
+                .stream()
+                .map(f -> new UserSummaryResponse(
+                        f.getFollower().getUserId(),
+                        f.getFollower().getNickname(),
+                        f.getFollower().getAvatarUrl()
+                ))
+                .toList();
+    }
+
+    @GetMapping("/{id}/following")
+    public List<UserSummaryResponse> getFollowing(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "50") int limit) {
+        User target = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        return followRepository.findByFollowerAndStatus(target, FollowStatus.accepted, PageRequest.of(0, Math.min(limit, 100)))
+                .stream()
+                .map(f -> new UserSummaryResponse(
+                        f.getFollowee().getUserId(),
+                        f.getFollowee().getNickname(),
+                        f.getFollowee().getAvatarUrl()
+                ))
+                .toList();
+    }
 
     @PostMapping("/{id}/follow")
     public void follow(@PathVariable Long id, @AuthenticationPrincipal String email) {

@@ -1,6 +1,7 @@
 package com.whitenights.tag.service;
 
 import com.whitenights.tag.domain.Tag;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -43,7 +44,7 @@ public class TagService {
 
     public Tag findById(Long id) {
         return tagRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tag not found: " + id));
+                .orElseThrow(() -> new NotFoundException("Tag not found: " + id));
     }
 
     private List<Tag> merge(List<Tag> a, List<Tag> b) {

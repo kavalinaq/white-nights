@@ -29,6 +29,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
     }
 
+    @ExceptionHandler(com.whitenights.common.exception.types.NotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNotFoundException(com.whitenights.common.exception.types.NotFoundException e) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException e) {
         return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

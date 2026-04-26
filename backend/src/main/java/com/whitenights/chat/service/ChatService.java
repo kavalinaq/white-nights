@@ -12,6 +12,7 @@ import com.whitenights.chat.repository.ChatMemberRepository;
 import com.whitenights.chat.repository.ChatRepository;
 import com.whitenights.chat.repository.MessageRepository;
 import com.whitenights.common.exception.types.ForbiddenException;
+import com.whitenights.common.exception.types.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -57,7 +58,7 @@ public class ChatService {
         Chat chat = requireChat(chatId);
         requireOwner(chatId, requester);
         User newMember = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         if (!chatMemberRepository.existsByIdChatIdAndIdUserId(chatId, userId)) {
             chatMemberRepository.save(ChatMember.builder()
                     .id(new ChatMember.ChatMemberId(chatId, userId))
@@ -77,7 +78,7 @@ public class ChatService {
     @Transactional
     public void deleteMessage(Long messageId, User user) {
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new RuntimeException("Message not found"));
+                .orElseThrow(() -> new NotFoundException("Message not found"));
         if (!message.getSender().getUserId().equals(user.getUserId())) {
             throw new ForbiddenException("Access denied");
         }
@@ -98,7 +99,7 @@ public class ChatService {
 
     private ChatResponse create1v1(Long peerId, User creator) {
         User peer = userRepository.findById(peerId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         Chat chat = chatRepository.save(Chat.builder().createdBy(creator).isGroup(false).build());
         addMemberRow(chat, creator, ChatMemberRole.member);
         addMemberRow(chat, peer, ChatMemberRole.member);
@@ -112,7 +113,7 @@ public class ChatService {
             memberIds.stream()
                     .distinct()
                     .filter(id -> !id.equals(creator.getUserId()))
-                    .map(id -> userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found: " + id)))
+                    .map(id -> userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found: " + id)))
                     .forEach(u -> addMemberRow(chat, u, ChatMemberRole.member));
         }
         return toChatResponse(chat, creator);
@@ -129,7 +130,7 @@ public class ChatService {
 
     private Chat requireChat(Long chatId) {
         return chatRepository.findById(chatId)
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
+                .orElseThrow(() -> new NotFoundException("Chat not found"));
     }
 
     private void requireMember(Long chatId, User user) {

@@ -6,6 +6,7 @@ import com.whitenights.auth.domain.UserRole;
 import com.whitenights.auth.repository.RefreshTokenRepository;
 import com.whitenights.auth.repository.UserRepository;
 import com.whitenights.common.exception.types.ForbiddenException;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.moderation.domain.ModerationAction;
 import com.whitenights.moderation.domain.ModerationActionType;
 import com.whitenights.moderation.domain.ReportStatus;
@@ -32,7 +33,14 @@ public class AdminService {
     public void changeRole(Long userId, UserRole newRole, User admin) {
         requireAdmin(admin);
         User target = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (target.getRole() == UserRole.admin && newRole != UserRole.admin) {
+            long adminCount = userRepository.countByRole(UserRole.admin);
+            if (adminCount <= 1) {
+                throw new ForbiddenException("Cannot demote the last admin");
+            }
+        }
 
         actionRepository.save(ModerationAction.builder()
                 .moderator(admin)
@@ -48,7 +56,7 @@ public class AdminService {
     public void unban(Long userId, User admin) {
         requireAdmin(admin);
         User target = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         target.setBlocked(false);
         userRepository.save(target);
     }
@@ -57,7 +65,7 @@ public class AdminService {
     public void deleteUser(Long userId, User admin) {
         requireAdmin(admin);
         User target = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         refreshTokenRepository.deleteByUser(target);
         userRepository.delete(target);
     }

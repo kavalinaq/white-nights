@@ -13,6 +13,7 @@ import com.whitenights.auth.repository.PasswordResetTokenRepository;
 import com.whitenights.bookshelf.service.BookshelfService;
 import com.whitenights.common.email.EmailService;
 import com.whitenights.common.exception.types.ConflictException;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.common.exception.types.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -71,7 +72,7 @@ public class AuthService {
     @Transactional
     public void verify(String token) {
         VerificationToken verificationToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+                .orElseThrow(() -> new NotFoundException("Invalid token"));
 
         if (verificationToken.isExpired()) {
             throw new RuntimeException("Token expired");
@@ -94,6 +95,10 @@ public class AuthService {
 
         if (!user.isVerified()) {
             throw new UnauthorizedException("Account not verified");
+        }
+
+        if (user.isBlocked()) {
+            throw new UnauthorizedException("Account is banned");
         }
 
         String accessToken = jwtService.generateAccessToken(user);
@@ -151,7 +156,7 @@ public class AuthService {
     @Transactional
     public void requestPasswordReset(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         passwordResetTokenRepository.deleteByUser_UserId(user.getUserId());
 
@@ -169,7 +174,7 @@ public class AuthService {
     @Transactional
     public void resetPassword(ResetPassword request) {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.token())
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+                .orElseThrow(() -> new NotFoundException("Invalid token"));
 
         if (resetToken.isExpired()) {
             passwordResetTokenRepository.delete(resetToken);

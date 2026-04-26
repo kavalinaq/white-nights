@@ -11,7 +11,8 @@ import com.whitenights.bookshelf.domain.Shelf;
 import com.whitenights.bookshelf.repository.BookRepository;
 import com.whitenights.bookshelf.repository.BooksOnShelfRepository;
 import com.whitenights.bookshelf.repository.ShelfRepository;
-import com.whitenights.common.exception.types.UnauthorizedException;
+import com.whitenights.common.exception.types.ForbiddenException;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.user.domain.FollowStatus;
 import com.whitenights.user.repository.FollowRepository;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +46,7 @@ public class BookshelfService {
 
     public List<ShelfResponse> getShelves(Long userId, User viewer) {
         User owner = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         checkReadAccess(owner, viewer);
 
@@ -56,7 +57,7 @@ public class BookshelfService {
     @Transactional
     public BookResponse addBook(Long shelfId, AddBookRequest request, User user) {
         Shelf shelf = shelfRepository.findByShelfIdAndUser(shelfId, user)
-                .orElseThrow(() -> new RuntimeException("Shelf not found"));
+                .orElseThrow(() -> new NotFoundException("Shelf not found"));
 
         Book book = bookRepository.save(Book.builder()
                 .user(user)
@@ -78,20 +79,20 @@ public class BookshelfService {
     @Transactional
     public void deleteBook(Long bookId, User user) {
         Book book = bookRepository.findByBookIdAndUser(bookId, user)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+                .orElseThrow(() -> new NotFoundException("Book not found"));
         bookRepository.delete(book);
     }
 
     @Transactional
     public void moveBook(Long bookId, Long toShelfId, Integer position, User user) {
         bookRepository.findByBookIdAndUser(bookId, user)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+                .orElseThrow(() -> new NotFoundException("Book not found"));
 
         Shelf targetShelf = shelfRepository.findByShelfIdAndUser(toShelfId, user)
-                .orElseThrow(() -> new RuntimeException("Shelf not found"));
+                .orElseThrow(() -> new NotFoundException("Shelf not found"));
 
         BooksOnShelf existing = booksOnShelfRepository.findByBook_BookId(bookId)
-                .orElseThrow(() -> new RuntimeException("Book is not on any shelf"));
+                .orElseThrow(() -> new NotFoundException("Book is not on any shelf"));
 
         booksOnShelfRepository.delete(existing);
         booksOnShelfRepository.flush();
@@ -110,7 +111,7 @@ public class BookshelfService {
     @Transactional
     public void reorderShelf(Long shelfId, List<Long> bookIds, User user) {
         shelfRepository.findByShelfIdAndUser(shelfId, user)
-                .orElseThrow(() -> new RuntimeException("Shelf not found"));
+                .orElseThrow(() -> new NotFoundException("Shelf not found"));
 
         List<BooksOnShelf> entries = booksOnShelfRepository.findByShelf_ShelfIdOrderByPosition(shelfId);
 
@@ -143,7 +144,7 @@ public class BookshelfService {
         boolean follows = viewer != null && followRepository
                 .existsByFollowerAndFolloweeAndStatus(viewer, owner, FollowStatus.accepted);
         if (!follows) {
-            throw new UnauthorizedException("Profile is private");
+            throw new ForbiddenException("Profile is private");
         }
     }
 }

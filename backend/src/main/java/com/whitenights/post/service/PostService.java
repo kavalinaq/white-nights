@@ -3,6 +3,7 @@ package com.whitenights.post.service;
 import com.whitenights.auth.domain.User;
 import com.whitenights.auth.domain.UserRole;
 import com.whitenights.auth.repository.UserRepository;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.common.storage.StorageService;
 import com.whitenights.post.api.dto.CreatePostRequest;
 import com.whitenights.post.api.dto.PostSummaryResponse;
@@ -56,7 +57,7 @@ public class PostService {
 
     public Post findById(Long postId, User viewer) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new NotFoundException("Post not found"));
         checkReadAccess(post, viewer);
         return post;
     }
@@ -68,7 +69,7 @@ public class PostService {
     @Transactional
     public PostSummaryResponse update(Long postId, UpdatePostRequest request, MultipartFile image, User currentUser) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new NotFoundException("Post not found"));
 
         if (!post.getUser().getUserId().equals(currentUser.getUserId())) {
             throw new RuntimeException("Access denied");
@@ -93,7 +94,7 @@ public class PostService {
     @Transactional
     public void delete(Long postId, User currentUser) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new NotFoundException("Post not found"));
 
         boolean isAuthor = post.getUser().getUserId().equals(currentUser.getUserId());
         boolean isModerator = currentUser.getRole() == UserRole.moderator || currentUser.getRole() == UserRole.admin;
@@ -108,7 +109,7 @@ public class PostService {
 
     public List<Post> findUserPosts(Long userId, Long cursor, int limit, User viewer) {
         User targetUser = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         boolean isSelf = viewer != null && viewer.getUserId().equals(userId);
         if (targetUser.isPrivate() && !isSelf) {
@@ -117,7 +118,7 @@ public class PostService {
                     .map(f -> f.getStatus() == FollowStatus.accepted)
                     .orElse(false);
             if (!follows) {
-                throw new com.whitenights.common.exception.types.UnauthorizedException("Profile is private");
+                throw new com.whitenights.common.exception.types.ForbiddenException("Profile is private");
             }
         }
 

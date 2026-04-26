@@ -2,6 +2,7 @@ package com.whitenights.user.service;
 
 import com.whitenights.auth.domain.User;
 import com.whitenights.auth.repository.UserRepository;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.user.domain.Follow;
 import com.whitenights.user.domain.FollowStatus;
 import com.whitenights.user.repository.FollowRepository;
@@ -23,7 +24,7 @@ public class FollowService {
         }
 
         User targetUser = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (followRepository.existsById(new Follow.FollowId(currentUser.getUserId(), targetUserId))) {
             return; // Already following or pending
@@ -49,7 +50,7 @@ public class FollowService {
     @Transactional
     public void acceptRequest(Long followerId, User currentUser) {
         Follow follow = followRepository.findById(new Follow.FollowId(followerId, currentUser.getUserId()))
-                .orElseThrow(() -> new RuntimeException("Follow request not found"));
+                .orElseThrow(() -> new NotFoundException("Follow request not found"));
 
         if (follow.getStatus() != FollowStatus.pending) {
             return;

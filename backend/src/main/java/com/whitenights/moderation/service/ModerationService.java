@@ -5,6 +5,7 @@ import com.whitenights.auth.domain.UserRole;
 import com.whitenights.auth.repository.RefreshTokenRepository;
 import com.whitenights.auth.repository.UserRepository;
 import com.whitenights.common.exception.types.ForbiddenException;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.moderation.api.dto.ReportResponse;
 import com.whitenights.moderation.api.dto.ResolveReportRequest;
 import com.whitenights.moderation.domain.ModerationAction;
@@ -113,7 +114,7 @@ public class ModerationService {
 
     private Report requireReport(Long reportId) {
         return reportRepository.findById(reportId)
-                .orElseThrow(() -> new RuntimeException("Report not found"));
+                .orElseThrow(() -> new NotFoundException("Report not found"));
     }
 
     private void requireModerator(User user) {

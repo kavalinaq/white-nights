@@ -3,6 +3,7 @@ package com.whitenights.user.service;
 import com.whitenights.auth.domain.User;
 import com.whitenights.auth.repository.UserRepository;
 import com.whitenights.common.exception.types.ConflictException;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.common.storage.StorageService;
 import com.whitenights.post.repository.PostRepository;
 import com.whitenights.user.api.dto.UpdateProfileRequest;
@@ -31,7 +32,7 @@ public class ProfileService {
 
     public UserProfileResponse getProfile(String nickname, User currentUser) {
         User user = userRepository.findByNickname(nickname)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         boolean isSelf = currentUser != null && currentUser.getUserId().equals(user.getUserId());
 

@@ -4,6 +4,7 @@ import com.whitenights.auth.domain.User;
 import com.whitenights.auth.domain.UserRole;
 import com.whitenights.post.api.dto.CommentResponse;
 import com.whitenights.post.domain.*;
+import com.whitenights.common.exception.types.NotFoundException;
 import com.whitenights.post.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -89,7 +90,7 @@ public class InteractionService {
     @Transactional
     public void deleteComment(Long commentId, User user) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new NotFoundException("Comment not found"));
 
         boolean isAuthor = comment.getUser().getUserId().equals(user.getUserId());
         boolean isModerator = user.getRole() == UserRole.moderator || user.getRole() == UserRole.admin;
@@ -117,7 +118,7 @@ public class InteractionService {
 
     private Post requirePost(Long postId) {
         return postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new NotFoundException("Post not found"));
     }
 
     private CommentResponse toCommentResponse(Comment c) {
