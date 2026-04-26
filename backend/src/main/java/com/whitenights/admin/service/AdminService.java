@@ -10,6 +10,7 @@ import com.whitenights.moderation.domain.ModerationAction;
 import com.whitenights.moderation.domain.ModerationActionType;
 import com.whitenights.moderation.domain.ReportStatus;
 import com.whitenights.moderation.repository.ModerationActionRepository;
+import com.whitenights.chat.repository.ChatRepository;
 import com.whitenights.moderation.repository.ReportRepository;
 import com.whitenights.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class AdminService {
     private final ReportRepository reportRepository;
     private final ModerationActionRepository actionRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final ChatRepository chatRepository;
 
     @Transactional
     public void changeRole(Long userId, UserRole newRole, User admin) {
@@ -66,7 +68,7 @@ public class AdminService {
                 userRepository.count(),
                 postRepository.count(),
                 reportRepository.countByStatus(ReportStatus.pending),
-                0L // chat count: available after Chat feature (#11) is implemented
+                chatRepository.count()
         );
     }
 
