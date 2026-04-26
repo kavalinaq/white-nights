@@ -21,4 +21,15 @@ public class ConsoleEmailService implements EmailService {
     public void sendPasswordResetEmail(String email, String token) {
         log.info("Sending password reset email to {}: token = {}", email, token);
     }
+
+    @Override
+    public void sendSupportMessage(String fromEmail, String subject, String message) {
+        log.info("Support message from {}: subject = {}", fromEmail, subject);
+        System.out.println("--------------------------------------------------");
+        System.out.println("SUPPORT MESSAGE");
+        System.out.println("From: " + fromEmail);
+        System.out.println("Subject: " + subject);
+        System.out.println("Message: " + message);
+        System.out.println("--------------------------------------------------");
+    }
 }
