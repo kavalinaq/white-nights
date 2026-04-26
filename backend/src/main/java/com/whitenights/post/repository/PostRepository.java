@@ -40,6 +40,20 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("""
             SELECT p FROM Post p
+            WHERE (LOWER(p.title) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(p.author) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(p.description) LIKE LOWER(CONCAT('%', :q, '%')))
+              AND p.isBlocked = false
+              AND (:cursor IS NULL OR p.postId < :cursor)
+            ORDER BY p.postId DESC
+            """)
+    List<Post> searchPosts(
+            @Param("q") String q,
+            @Param("cursor") Long cursor,
+            org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Post p
             WHERE p.user IN (
                 SELECT f.followee FROM Follow f
                 WHERE f.follower = :viewer AND f.status = :status

@@ -15,6 +15,17 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     @Query("SELECT t FROM Tag t WHERE LOWER(t.name) LIKE LOWER(CONCAT(:prefix, '%')) ORDER BY t.name")
     List<Tag> searchByPrefix(@Param("prefix") String prefix, org.springframework.data.domain.Pageable pageable);
 
+    @Query("""
+            SELECT t FROM Tag t
+            WHERE LOWER(t.name) LIKE LOWER(CONCAT('%', :q, '%'))
+              AND (:cursor IS NULL OR t.tagId < :cursor)
+            ORDER BY t.tagId DESC
+            """)
+    List<Tag> searchByName(
+            @Param("q") String q,
+            @Param("cursor") Long cursor,
+            org.springframework.data.domain.Pageable pageable);
+
     @Query(value = """
             SELECT t.tag_id, t.name
             FROM tags t
