@@ -40,18 +40,20 @@
 
 ### Требования
 
-- Docker & Docker Compose
-- JDK 25
-- Gradle (или используйте `./gradlew`)
+- **Docker & Docker Compose** (для БД и хранилища)
+- **JDK 25**
+- **Node.js 20+** и **npm**
+- **Gradle** (или используйте встроенный `./gradlew`)
 
 ### 1. Запуск инфраструктуры
 
+В корне проекта выполните:
 ```bash
 docker compose up -d
 ```
 
 Запускает:
-- **PostgreSQL** на порту `5432`
+- **PostgreSQL** на порту `5432` (логин: `user` / пароль: `password`)
 - **MinIO** на портах `9000` (API) и `9001` (консоль)
 
 ### 2. Настройка MinIO
@@ -60,8 +62,7 @@ docker compose up -d
 - `avatars` — для аватаров пользователей
 - `posts` — для изображений к постам
 
-Или через CLI:
-
+Или через CLI (если установлен `mc`):
 ```bash
 mc alias set local http://localhost:9000 minioadmin minioadmin
 mc mb local/avatars
@@ -76,8 +77,29 @@ mc anonymous set public local/posts
 cd backend
 ./gradlew bootRun
 ```
-
 API будет доступно на `http://localhost:8080`.
+
+### 4. Запуск фронтенда
+
+В новом терминале:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Приложение будет доступно на `http://localhost:5173`. Все запросы к `/api` автоматически проксируются на бэкенд (порт `8080`).
+
+---
+
+## Локальная разработка
+
+| Сервис | URL | Описание |
+|---|---|---|
+| Frontend | `http://localhost:5173` | Интерфейс приложения |
+| Backend API | `http://localhost:8080` | Swagger/OpenAPI (если включен) и эндпоинты |
+| PostgreSQL | `localhost:5432` | База данных `whitenights` |
+| MinIO Console | `http://localhost:9001` | Управление файловым хранилищем |
+| MinIO API | `http://localhost:9000` | S3-совместимый API |
 
 ---
 
