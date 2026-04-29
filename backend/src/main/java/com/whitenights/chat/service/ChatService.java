@@ -29,6 +29,7 @@ public class ChatService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public List<ChatResponse> getChats(User user) {
         return chatRepository.findByMember(user.getUserId()).stream()
                 .map(c -> toChatResponse(c, user))
@@ -76,6 +77,14 @@ public class ChatService {
     }
 
     @Transactional
+    public void deleteChat(Long chatId, User user) {
+        requireMember(chatId, user);
+        messageRepository.deleteByChatChatId(chatId);
+        chatMemberRepository.deleteByIdChatId(chatId);
+        chatRepository.deleteById(chatId);
+    }
+
+    @Transactional
     public void deleteMessage(Long messageId, User user) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new NotFoundException("Message not found"));
@@ -100,6 +109,9 @@ public class ChatService {
     private ChatResponse create1v1(Long peerId, User creator) {
         User peer = userRepository.findById(peerId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
+        if (!peer.isVerified()) {
+            throw new ForbiddenException("Cannot start a chat with an unverified user");
+        }
         Chat chat = chatRepository.save(Chat.builder().createdBy(creator).isGroup(false).build());
         addMemberRow(chat, creator, ChatMemberRole.member);
         addMemberRow(chat, peer, ChatMemberRole.member);

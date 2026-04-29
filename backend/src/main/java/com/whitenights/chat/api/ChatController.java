@@ -35,6 +35,14 @@ public class ChatController {
         return chatService.createChat(request.peerId(), request.name(), request.memberIds(), resolveUser(email));
     }
 
+    @DeleteMapping("/api/chats/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteChat(
+            @PathVariable Long id,
+            @AuthenticationPrincipal String email) {
+        chatService.deleteChat(id, resolveUser(email));
+    }
+
     @GetMapping("/api/chats/{id}/messages")
     public List<MessageResponse> getMessages(
             @PathVariable Long id,

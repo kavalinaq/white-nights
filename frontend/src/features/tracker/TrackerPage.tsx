@@ -60,6 +60,11 @@ export function TrackerPage() {
 
   const monthName = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 
+  const validEntries = entries?.filter((e) => e.pagesRead !== null && e.pagesRead! > 0) ?? [];
+  const totalPages = validEntries.reduce((sum, e) => sum + (e.pagesRead ?? 0), 0);
+  const bestDay = validEntries.reduce((max, e) => Math.max(max, e.pagesRead ?? 0), 0);
+  const daysLogged = validEntries.length;
+
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
       <h2 className="font-serif text-2xl font-bold text-[#1c1714] mb-5">Reading Tracker</h2>
@@ -96,6 +101,20 @@ export function TrackerPage() {
             );
           })}
         </div>
+      </div>
+
+      {/* Monthly stats */}
+      <div className="mt-4 grid grid-cols-3 gap-3">
+        {[
+          { label: 'Pages read', value: totalPages.toLocaleString() },
+          { label: 'Days logged', value: daysLogged },
+          { label: 'Best day', value: bestDay > 0 ? `${bestDay}p` : '—' },
+        ].map(({ label, value }) => (
+          <div key={label} className="bg-white rounded-xl border border-[#e8e2d9] p-4 text-center">
+            <div className="font-bold text-xl text-[#5b63d3]">{value}</div>
+            <div className="text-xs text-[#7a6f68] mt-0.5">{label}</div>
+          </div>
+        ))}
       </div>
 
       {selectedDate && (

@@ -9,5 +9,6 @@ public record UpdatePostRequest(
         @Size(max = 120) String author,
         String description,
         List<String> tagNames,
-        List<Long> tagIds
+        List<Long> tagIds,
+        Boolean removeImage
 ) {}

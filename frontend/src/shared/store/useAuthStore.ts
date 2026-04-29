@@ -12,6 +12,7 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   setAuth: (user: User, token: string) => void;
   logout: () => void;
   checkAuth: () => Promise<void>;
@@ -21,23 +22,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: localStorage.getItem('access_token'),
   isAuthenticated: !!localStorage.getItem('access_token'),
+  isLoading: true,
   setAuth: (user, token) => {
     localStorage.setItem('access_token', token);
-    set({ user, accessToken: token, isAuthenticated: true });
+    set({ user, accessToken: token, isAuthenticated: true, isLoading: false });
   },
   logout: () => {
     localStorage.removeItem('access_token');
-    set({ user: null, accessToken: null, isAuthenticated: false });
+    set({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
   },
   checkAuth: async () => {
     try {
       const response = await client.post('/auth/refresh');
       const { user, accessToken } = response.data;
       localStorage.setItem('access_token', accessToken);
-      set({ user, accessToken, isAuthenticated: true });
+      set({ user, accessToken, isAuthenticated: true, isLoading: false });
     } catch {
       localStorage.removeItem('access_token');
-      set({ user: null, accessToken: null, isAuthenticated: false });
+      set({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
     }
   },
 }));

@@ -6,6 +6,7 @@ import { useComments } from './hooks/useComments';
 import { useDeletePost } from './hooks/usePostMutations';
 import { EditPostModal } from './EditPostModal';
 import { useAuthStore } from '../../shared/store/useAuthStore';
+import { Avatar } from '../../shared/components/Avatar';
 
 export function PostPage() {
   const { id } = useParams<{ id: string }>();
@@ -57,9 +58,7 @@ export function PostPage() {
           {/* Author + actions */}
           <div className="flex items-center gap-3 mb-5">
             <Link to={`/u/${post.authorInfo.nickname}`} className="flex items-center gap-2 no-underline">
-              {post.authorInfo.avatarUrl
-                ? <img src={post.authorInfo.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
-                : <div className="w-9 h-9 rounded-full bg-[#e8e2d9]" />}
+              <Avatar src={post.authorInfo.avatarUrl} name={post.authorInfo.nickname} size="md" />
               <span className="font-semibold text-sm text-[#2d2926] hover:text-[#5b63d3] transition-colors">@{post.authorInfo.nickname}</span>
             </Link>
             <span className="text-xs text-[#7a6f68] ml-auto">{new Date(post.createdAt).toLocaleDateString()}</span>
@@ -128,6 +127,7 @@ export function PostPage() {
               {comments.map((c) => (
                 <div key={c.commentId} className="bg-[#faf7f2] rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
+                    <Avatar src={c.author.avatarUrl} name={c.author.nickname} size="sm" />
                     <Link to={`/u/${c.author.nickname}`} className="font-semibold text-sm no-underline text-[#2d2926] hover:text-[#5b63d3] transition-colors">
                       @{c.author.nickname}
                     </Link>

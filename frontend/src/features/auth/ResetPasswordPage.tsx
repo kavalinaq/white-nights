@@ -70,8 +70,7 @@ export const ResetPasswordPage = () => {
           </button>
           {mutation.isError && (
             <p className="text-red-500 text-sm">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {(mutation.error as any).response?.data?.detail || 'Reset failed. Link may have expired.'}
+              {(mutation.error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Reset failed. Link may have expired.'}
             </p>
           )}
         </form>

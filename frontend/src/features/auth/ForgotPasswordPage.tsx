@@ -45,8 +45,7 @@ export const ForgotPasswordPage = () => {
           </button>
           {mutation.isError && (
             <p className="text-red-500 text-sm text-center">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {(mutation.error as any).response?.data?.detail || 'Something went wrong. Try again.'}
+              {(mutation.error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Something went wrong. Try again.'}
             </p>
           )}
         </form>

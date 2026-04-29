@@ -45,3 +45,13 @@ export function useCreateChat() {
     },
   });
 }
+
+export function useDeleteChat() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (chatId: number) => client.delete(`/chats/${chatId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
+    },
+  });
+}

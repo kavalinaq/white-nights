@@ -11,8 +11,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
 
   const mutation = useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mutationFn: (data: any) => client.post('/auth/login', data),
+    mutationFn: (data: { email: string; password: string }) => client.post('/auth/login', data),
     onSuccess: (response) => {
       const { accessToken, user } = response.data;
       setAuth(user, accessToken);
@@ -46,8 +45,7 @@ export const LoginPage = () => {
           </button>
           {mutation.isError && (
             <p className="text-red-500 text-sm text-center">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {(mutation.error as any).response?.data?.message || 'Login failed'}
+              {(mutation.error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Login failed'}
             </p>
           )}
         </form>

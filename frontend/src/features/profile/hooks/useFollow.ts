@@ -7,6 +7,13 @@ export interface FollowUser {
   avatarUrl: string | null;
 }
 
+interface Profile {
+  followerCount: number;
+  followingCount: number;
+  followStatus: string | null;
+  [key: string]: unknown;
+}
+
 export const useFollowers = (userId: number | undefined) => {
   return useQuery<FollowUser[]>({
     queryKey: ['followers', userId],
@@ -32,18 +39,29 @@ export const useFollowing = (userId: number | undefined) => {
 export const useFollow = (targetUserId: number, targetNickname: string) => {
   const queryClient = useQueryClient();
 
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['profile', targetNickname] });
+
   const follow = useMutation({
     mutationFn: () => client.post(`/users/${targetUserId}/follow`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', targetNickname] });
+    onMutate: () => {
+      queryClient.setQueryData<Profile>(['profile', targetNickname], (old) =>
+        old ? { ...old, followStatus: 'pending', followerCount: old.followerCount + 1 } : old
+      );
     },
+    onError: invalidate,
+    onSettled: invalidate,
   });
 
   const unfollow = useMutation({
     mutationFn: () => client.delete(`/users/${targetUserId}/follow`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', targetNickname] });
+    onMutate: () => {
+      queryClient.setQueryData<Profile>(['profile', targetNickname], (old) =>
+        old ? { ...old, followStatus: null, followerCount: Math.max(0, old.followerCount - 1) } : old
+      );
     },
+    onError: invalidate,
+    onSettled: invalidate,
   });
 
   return { follow, unfollow };
@@ -74,6 +92,7 @@ export const useHandleFollowRequest = () => {
     mutationFn: (followerId: number) => client.post(`/users/me/follow-requests/${followerId}/reject`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['follow-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 

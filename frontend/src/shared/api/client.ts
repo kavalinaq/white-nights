@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../store/useAuthStore';
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
@@ -12,5 +13,22 @@ client.interceptors.request.use((config) => {
   }
   return config;
 });
+
+client.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    if (error.response?.status === 401 && !error.config._retry) {
+      error.config._retry = true;
+      try {
+        await useAuthStore.getState().checkAuth();
+        return client(error.config);
+      } catch {
+        useAuthStore.getState().logout();
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default client;

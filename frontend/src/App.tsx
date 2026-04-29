@@ -15,6 +15,7 @@ import { ShelvesPage } from './features/shelves/ShelvesPage';
 import { TrackerPage } from './features/tracker/TrackerPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { ChatsPage } from './features/chat/ChatsPage';
+import { ModerationPage } from './features/moderation/ModerationPage';
 
 function NavBar() {
   const { user, logout } = useAuthStore();
@@ -33,6 +34,9 @@ function NavBar() {
             <Link to={`/u/${user.nickname}/shelves`} className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Shelves</Link>
             <Link to="/tracker" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Tracker</Link>
             <Link to="/chat" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Chat</Link>
+            {(user.role === 'moderator' || user.role === 'admin') && (
+              <Link to="/moderation" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Moderation</Link>
+            )}
           </>
         )}
         <div className="ml-auto flex items-center gap-4">
@@ -60,7 +64,8 @@ function NavBar() {
 }
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
+  if (isLoading) return null;
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
@@ -86,6 +91,7 @@ function App() {
         <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
         <Route path="/chat" element={<PrivateRoute><ChatsPage /></PrivateRoute>} />
         <Route path="/chat/:id" element={<PrivateRoute><ChatsPage /></PrivateRoute>} />
+        <Route path="/moderation" element={<PrivateRoute><ModerationPage /></PrivateRoute>} />
         <Route path="/" element={<PrivateRoute><FeedPage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

@@ -10,8 +10,8 @@ export const RegisterPage = () => {
   const [success, setSuccess] = useState(false);
 
   const mutation = useMutation({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mutationFn: (data: any) => client.post('/auth/register', data),
+    mutationFn: (data: { nickname: string; email: string; password: string }) =>
+      client.post('/auth/register', data),
     onSuccess: () => setSuccess(true),
   });
 
@@ -60,8 +60,7 @@ export const RegisterPage = () => {
           </button>
           {mutation.isError && (
             <p className="text-red-500 text-sm text-center">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {(mutation.error as any).response?.data?.message || 'Registration failed'}
+              {(mutation.error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Registration failed'}
             </p>
           )}
         </form>

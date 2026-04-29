@@ -15,7 +15,9 @@
       "Bash(git stash *)",
       "Bash(git rm *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(grep -A 10 \"const { follow, unfollow }\" /Users/glebremniov/dev/projects/white-nights/frontend/src/features/profile/ProfilePage.tsx)",
+      "Bash(grep -A 10 \"const { accessToken, user }\" /Users/glebremniov/dev/projects/white-nights/frontend/src/features/auth/LoginPage.tsx)"
     ]
   }
 }

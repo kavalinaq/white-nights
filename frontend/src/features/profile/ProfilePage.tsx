@@ -9,6 +9,7 @@ import { FollowersModal } from './FollowersModal';
 import { usePosts } from '../post/hooks/usePosts';
 import { PostCard } from '../../shared/components/PostCard';
 import { useCreateChat } from '../chat/hooks/useChats';
+import { ReportModal } from '../moderation/ReportModal';
 
 export const ProfilePage = () => {
   const { nickname } = useParams<{ nickname: string }>();
@@ -19,6 +20,7 @@ export const ProfilePage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
   const [followModal, setFollowModal] = useState<'followers' | 'following' | null>(null);
+  const [reportPostId, setReportPostId] = useState<number | null>(null);
 
   const { follow, unfollow } = useFollow(profile?.userId, profile?.nickname);
   const { data: requests } = useFollowRequests();
@@ -116,7 +118,7 @@ export const ProfilePage = () => {
             </div>
           )}
           <div className="space-y-4">
-            {posts.map((post) => <PostCard key={post.postId} post={post} />)}
+            {posts.map((post) => <PostCard key={post.postId} post={post} onReport={(id) => setReportPostId(id)} />)}
           </div>
           {hasMore && (
             <button onClick={() => loadMore()} disabled={isFetching}
@@ -130,6 +132,7 @@ export const ProfilePage = () => {
       {isEditModalOpen && <EditProfileModal profile={profile} onClose={() => setIsEditModalOpen(false)} />}
       {isRequestsModalOpen && <FollowRequestsModal onClose={() => setIsRequestsModalOpen(false)} />}
       {followModal && <FollowersModal userId={profile.userId} initialTab={followModal} onClose={() => setFollowModal(null)} />}
+      {reportPostId !== null && <ReportModal targetType="post" targetId={reportPostId} onClose={() => setReportPostId(null)} />}
     </div>
   );
 };

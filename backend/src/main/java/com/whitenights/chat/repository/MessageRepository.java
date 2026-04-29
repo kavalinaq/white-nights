@@ -11,6 +11,8 @@ import java.util.Optional;
 
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
+    void deleteByChatChatId(Long chatId);
+
     @Query("""
             SELECT m FROM Message m
             WHERE m.chat.chatId = :chatId

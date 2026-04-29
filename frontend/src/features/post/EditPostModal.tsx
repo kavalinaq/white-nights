@@ -10,7 +10,14 @@ export function EditPostModal({ post, onClose }: Props) {
   const [description, setDescription] = useState(post.description);
   const [tagInput, setTagInput] = useState(post.tags.map((t) => t.name).join(', '));
   const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(post.imageUrl ?? null);
   const updatePost = useUpdatePost(post.postId);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setImage(file);
+    setPreview(file ? URL.createObjectURL(file) : null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,22 +30,35 @@ export function EditPostModal({ post, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
         <h2 className="font-serif text-xl font-bold text-[#1c1714] mb-5">Edit post</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input placeholder="Book title" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={120} className={inputCls} />
           <input placeholder="Author" value={author} onChange={(e) => setAuthor(e.target.value)} required maxLength={120} className={inputCls} />
           <textarea placeholder="Your review or quote" value={description} onChange={(e) => setDescription(e.target.value)} required rows={4} className={inputCls + ' resize-y'} />
           <input placeholder="Tags (comma-separated)" value={tagInput} onChange={(e) => setTagInput(e.target.value)} className={inputCls} />
+
           <div>
-            <label className="text-xs text-[#7a6f68] mb-1 block">Replace image (optional)</label>
-            <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] ?? null)}
+            <label className="text-xs text-[#7a6f68] mb-1.5 block">Cover image</label>
+            {preview && (
+              <div className="relative mb-2">
+                <img src={preview} alt="preview" className="w-full h-40 object-cover rounded-lg border border-[#e8e2d9]" />
+                <button
+                  type="button"
+                  onClick={() => { setImage(null); setPreview(null); }}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 text-white text-xs flex items-center justify-center border-none cursor-pointer hover:bg-black/70"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            <input type="file" accept="image/*" onChange={handleImageChange}
               className="text-sm text-[#7a6f68] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[#e8e2d9] file:bg-white file:text-sm file:cursor-pointer hover:file:border-[#5b63d3]" />
           </div>
+
           {updatePost.error && (
             <p className="text-red-500 text-sm">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {(updatePost.error as any).response?.data?.detail || 'Failed to update post'}
+              {(updatePost.error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to update post'}
             </p>
           )}
           <div className="flex gap-2 justify-end mt-1">
