@@ -38,90 +38,75 @@ export function PostCard({ post, onReport }: Props) {
   const { isAuthenticated } = useAuthStore();
   const { like, unlike, save, unsave } = useInteractions(post.postId);
 
-  const toggleLike = () => (post.liked ? unlike.mutate() : like.mutate());
-  const toggleSave = () => (post.saved ? unsave.mutate() : save.mutate());
-
   return (
-    <div className="post-card">
+    <article className="bg-white rounded-xl border border-[#e8e2d9] shadow-sm overflow-hidden hover:shadow-md transition-shadow">
       {post.imageUrl && (
         <Link to={`/posts/${post.postId}`}>
-          <img
-            src={post.imageUrl}
-            alt={post.title}
-            style={{ width: '100%', maxHeight: '240px', objectFit: 'cover', borderRadius: '8px' }}
-          />
+          <img src={post.imageUrl} alt={post.title} className="w-full h-52 object-cover" />
         </Link>
       )}
 
-      <div className="post-card-body" style={{ padding: '0.75rem 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-          <Link to={`/u/${post.authorInfo.nickname}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none', color: 'inherit' }}>
-            {post.authorInfo.avatarUrl ? (
-              <img src={post.authorInfo.avatarUrl} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#ccc' }} />
-            )}
-            <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>@{post.authorInfo.nickname}</span>
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Link to={`/u/${post.authorInfo.nickname}`} className="flex items-center gap-2 no-underline">
+            {post.authorInfo.avatarUrl
+              ? <img src={post.authorInfo.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+              : <div className="w-7 h-7 rounded-full bg-[#e8e2d9]" />}
+            <span className="text-sm font-semibold text-[#2d2926] hover:text-[#5b63d3] transition-colors">@{post.authorInfo.nickname}</span>
           </Link>
-          <span style={{ color: '#888', fontSize: '0.8rem', marginLeft: 'auto' }}>
-            {new Date(post.createdAt).toLocaleDateString()}
-          </span>
+          <span className="text-xs text-[#7a6f68] ml-auto">{new Date(post.createdAt).toLocaleDateString()}</span>
         </div>
 
-        <Link to={`/posts/${post.postId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <h3 style={{ margin: '0 0 0.25rem', fontSize: '1rem' }}>{post.title}</h3>
-          <p style={{ margin: '0 0 0.5rem', color: '#555', fontSize: '0.875rem' }}>
-            {post.author}
-          </p>
-          <p style={{ margin: '0 0 0.5rem', fontSize: '0.875rem', color: '#333', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {post.description}
-          </p>
+        <Link to={`/posts/${post.postId}`} className="no-underline group block mb-3">
+          <h3 className="font-serif text-base font-bold text-[#1c1714] group-hover:text-[#5b63d3] transition-colors mb-0.5">{post.title}</h3>
+          <p className="text-xs text-[#7a6f68] italic mb-2">{post.author}</p>
+          <p className="text-sm text-[#2d2926] line-clamp-3 leading-relaxed">{post.description}</p>
         </Link>
 
         {post.tags.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '0.5rem' }}>
+          <div className="flex flex-wrap gap-1.5 mb-3">
             {post.tags.map((tag) => (
-              <Link key={tag.tagId} to={`/tags/${tag.name}`} style={{ fontSize: '0.75rem', background: '#eee', padding: '2px 8px', borderRadius: '12px', textDecoration: 'none', color: '#555' }}>
+              <Link key={tag.tagId} to={`/tags/${tag.name}`}
+                className="text-xs bg-[#eef0ff] text-[#5b63d3] px-2 py-0.5 rounded-full no-underline hover:bg-[#5b63d3] hover:text-white transition-colors font-medium">
                 #{tag.name}
               </Link>
             ))}
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', fontSize: '0.875rem', color: '#666' }}>
-          {isAuthenticated && (
+        <div className="flex items-center gap-3 pt-3 border-t border-[#f3ede4] text-sm text-[#7a6f68]">
+          {isAuthenticated ? (
             <>
               <button
-                onClick={toggleLike}
+                onClick={() => post.liked ? unlike.mutate() : like.mutate()}
                 disabled={like.isPending || unlike.isPending}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: post.liked ? '#e74c3c' : '#666', padding: 0 }}
+                className={`flex items-center gap-1 cursor-pointer border-none bg-transparent p-0 text-sm transition-colors disabled:opacity-50 ${post.liked ? 'text-red-500 font-semibold' : 'hover:text-red-400'}`}
               >
-                ♥ {post.likeCount}
+                {post.liked ? '♥' : '♡'} {post.likeCount}
               </button>
               <button
-                onClick={toggleSave}
+                onClick={() => post.saved ? unsave.mutate() : save.mutate()}
                 disabled={save.isPending || unsave.isPending}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: post.saved ? '#f39c12' : '#666', padding: 0 }}
+                className={`flex items-center gap-1 cursor-pointer border-none bg-transparent p-0 text-sm transition-colors disabled:opacity-50 ${post.saved ? 'text-amber-500 font-semibold' : 'hover:text-amber-400'}`}
               >
-                🔖 {post.saved ? 'Saved' : 'Save'}
+                {post.saved ? '🔖' : '🏷️'} {post.saved ? 'Saved' : 'Save'}
               </button>
             </>
+          ) : (
+            <span>♡ {post.likeCount}</span>
           )}
-          {!isAuthenticated && <span>♥ {post.likeCount}</span>}
-          <Link to={`/posts/${post.postId}`} style={{ color: '#666', textDecoration: 'none' }}>
+          <Link to={`/posts/${post.postId}`} className="flex items-center gap-1 no-underline text-[#7a6f68] hover:text-[#5b63d3] transition-colors">
             💬 {post.commentCount}
           </Link>
-          <span style={{ marginLeft: 'auto', fontSize: '0.75rem' }}>👁 {post.viewCount}</span>
+          <span className="ml-auto text-xs">👁 {post.viewCount}</span>
           {isAuthenticated && onReport && (
-            <button
-              onClick={() => onReport(post.postId)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '0.75rem', padding: 0 }}
-            >
+            <button onClick={() => onReport(post.postId)}
+              className="cursor-pointer border-none bg-transparent p-0 text-xs text-[#b0a9a1] hover:text-red-400 transition-colors">
               ⚑ Report
             </button>
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }

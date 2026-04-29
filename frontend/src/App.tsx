@@ -4,6 +4,8 @@ import { useAuthStore } from './shared/store/useAuthStore';
 import { LoginPage } from './features/auth/LoginPage';
 import { RegisterPage } from './features/auth/RegisterPage';
 import { VerifyPage } from './features/auth/VerifyPage';
+import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from './features/auth/ResetPasswordPage';
 import { ProfilePage } from './features/profile/ProfilePage';
 import { FeedPage } from './features/feed/FeedPage';
 import { PostPage } from './features/post/PostPage';
@@ -18,31 +20,40 @@ function NavBar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   return (
-    <nav style={{ borderBottom: '1px solid #eee', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', background: '#fff', position: 'sticky', top: 0, zIndex: 100 }}>
-      <Link to="/" style={{ fontWeight: 700, textDecoration: 'none', color: '#646cff', fontSize: '1.1rem' }}>White Nights</Link>
-      <Link to="/" style={{ textDecoration: 'none', color: '#333', fontSize: '0.9rem' }}>Feed</Link>
-      <Link to="/search" style={{ textDecoration: 'none', color: '#333', fontSize: '0.9rem' }}>Search</Link>
-      {user && (
-        <>
-          <Link to={`/u/${user.nickname}/shelves`} style={{ textDecoration: 'none', color: '#333', fontSize: '0.9rem' }}>Shelves</Link>
-          <Link to="/tracker" style={{ textDecoration: 'none', color: '#333', fontSize: '0.9rem' }}>Tracker</Link>
-          <Link to="/chat" style={{ textDecoration: 'none', color: '#333', fontSize: '0.9rem' }}>Chat</Link>
-        </>
-      )}
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+    <nav className="bg-white border-b border-[#e8e2d9] shadow-sm sticky top-0 z-50">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6">
+        <Link to="/" className="font-serif font-bold text-[#5b63d3] text-lg tracking-tight">
+          📖 White Nights
+        </Link>
+        <Link to="/" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Feed</Link>
+        <Link to="/search" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Search</Link>
         {user && (
           <>
-            <Link to={`/u/${user.nickname}`} style={{ textDecoration: 'none', color: '#333', fontSize: '0.9rem' }}>@{user.nickname}</Link>
-            <Link to="/settings" style={{ textDecoration: 'none', color: '#333', fontSize: '0.9rem' }}>Settings</Link>
-            <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: '0.9rem' }}>Logout</button>
+            <Link to={`/u/${user.nickname}/shelves`} className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Shelves</Link>
+            <Link to="/tracker" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Tracker</Link>
+            <Link to="/chat" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Chat</Link>
           </>
         )}
+        <div className="ml-auto flex items-center gap-4">
+          {user ? (
+            <>
+              <Link to={`/u/${user.nickname}`} className="text-sm font-medium text-[#2d2926] hover:text-[#5b63d3] transition-colors">@{user.nickname}</Link>
+              <Link to="/settings" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Settings</Link>
+              <button
+                onClick={() => { logout(); navigate('/login'); }}
+                className="text-sm text-[#7a6f68] hover:text-[#5b63d3] bg-transparent border-none cursor-pointer p-0 transition-colors"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Login</Link>
+              <Link to="/register" className="text-sm bg-[#5b63d3] text-white px-3 py-1.5 rounded-lg hover:bg-[#4951c4] transition-colors">Join</Link>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );
@@ -55,10 +66,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const { checkAuth } = useAuthStore();
-
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  useEffect(() => { checkAuth(); }, [checkAuth]);
 
   return (
     <>
@@ -67,51 +75,18 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify" element={<VerifyPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/u/:nickname" element={<ProfilePage />} />
         <Route path="/posts/:id" element={<PostPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/tags/:name" element={<TagPage />} />
         <Route path="/u/:nickname/shelves" element={<ShelvesPage />} />
-        <Route
-          path="/tracker"
-          element={
-            <PrivateRoute>
-              <TrackerPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <PrivateRoute>
-              <SettingsPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <PrivateRoute>
-              <ChatsPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/chat/:id"
-          element={
-            <PrivateRoute>
-              <ChatsPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <FeedPage />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/tracker" element={<PrivateRoute><TrackerPage /></PrivateRoute>} />
+        <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
+        <Route path="/chat" element={<PrivateRoute><ChatsPage /></PrivateRoute>} />
+        <Route path="/chat/:id" element={<PrivateRoute><ChatsPage /></PrivateRoute>} />
+        <Route path="/" element={<PrivateRoute><FeedPage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>

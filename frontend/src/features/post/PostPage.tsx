@@ -23,12 +23,11 @@ export function PostPage() {
 
   useEffect(() => {
     if (postId) recordView();
-    // recordView is stable per postId — including it would cause an infinite loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
 
-  if (isLoading) return <p style={{ textAlign: 'center', padding: '2rem' }}>Loading...</p>;
-  if (!post) return <p style={{ textAlign: 'center', padding: '2rem' }}>Post not found.</p>;
+  if (isLoading) return <div className="max-w-2xl mx-auto px-4 py-8 text-center text-[#7a6f68]">Loading…</div>;
+  if (!post) return <div className="max-w-2xl mx-auto px-4 py-8 text-center text-[#7a6f68]">Post not found.</div>;
 
   const isMine = user?.nickname === post.authorInfo.nickname;
 
@@ -46,111 +45,112 @@ export function PostPage() {
   };
 
   return (
-    <div className="post-page" style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 1rem' }}>
-      <Link to="/" style={{ color: '#646cff', textDecoration: 'none', fontSize: '0.875rem' }}>← Back to feed</Link>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <Link to="/" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">← Back to feed</Link>
 
-      <div style={{ marginTop: '1rem' }}>
+      <article className="mt-4 bg-white rounded-2xl border border-[#e8e2d9] shadow-sm overflow-hidden">
         {post.imageUrl && (
-          <img src={post.imageUrl} alt={post.title} style={{ width: '100%', borderRadius: '12px', marginBottom: '1rem', objectFit: 'cover', maxHeight: '360px' }} />
+          <img src={post.imageUrl} alt={post.title} className="w-full max-h-80 object-cover" />
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <Link to={`/u/${post.authorInfo.nickname}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none', color: 'inherit' }}>
-            {post.authorInfo.avatarUrl
-              ? <img src={post.authorInfo.avatarUrl} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
-              : <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#ccc' }} />}
-            <span style={{ fontWeight: 600 }}>@{post.authorInfo.nickname}</span>
-          </Link>
-          <span style={{ color: '#888', fontSize: '0.85rem', marginLeft: 'auto' }}>
-            {new Date(post.createdAt).toLocaleDateString()}
-          </span>
-          {isMine && (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button onClick={() => setShowEdit(true)} style={{ padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '6px', border: '1px solid #ccc', background: '#f5f5f5' }}>Edit</button>
-              <button onClick={handleDelete} disabled={deletePost.isPending} style={{ padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', borderRadius: '6px', border: 'none', background: '#e74c3c', color: '#fff' }}>Delete</button>
+        <div className="p-6">
+          {/* Author + actions */}
+          <div className="flex items-center gap-3 mb-5">
+            <Link to={`/u/${post.authorInfo.nickname}`} className="flex items-center gap-2 no-underline">
+              {post.authorInfo.avatarUrl
+                ? <img src={post.authorInfo.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+                : <div className="w-9 h-9 rounded-full bg-[#e8e2d9]" />}
+              <span className="font-semibold text-sm text-[#2d2926] hover:text-[#5b63d3] transition-colors">@{post.authorInfo.nickname}</span>
+            </Link>
+            <span className="text-xs text-[#7a6f68] ml-auto">{new Date(post.createdAt).toLocaleDateString()}</span>
+            {isMine && (
+              <div className="flex gap-2">
+                <button onClick={() => setShowEdit(true)}
+                  className="px-3 py-1 text-xs rounded-lg border border-[#e8e2d9] bg-white text-[#7a6f68] cursor-pointer hover:border-[#5b63d3] transition">Edit</button>
+                <button onClick={handleDelete} disabled={deletePost.isPending}
+                  className="px-3 py-1 text-xs rounded-lg bg-red-500 hover:bg-red-600 text-white border-none cursor-pointer transition disabled:opacity-50">Delete</button>
+              </div>
+            )}
+          </div>
+
+          <h1 className="font-serif text-2xl font-bold text-[#1c1714] mb-1">{post.title}</h1>
+          <p className="text-sm text-[#7a6f68] italic mb-4">{post.author}</p>
+          <p className="text-sm leading-relaxed text-[#2d2926] mb-5">{post.description}</p>
+
+          {post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-5">
+              {post.tags.map((tag) => (
+                <Link key={tag.tagId} to={`/tags/${tag.name}`}
+                  className="text-xs bg-[#eef0ff] text-[#5b63d3] px-2.5 py-0.5 rounded-full no-underline hover:bg-[#5b63d3] hover:text-white transition font-medium">
+                  #{tag.name}
+                </Link>
+              ))}
             </div>
           )}
-        </div>
 
-        <h1 style={{ margin: '0 0 0.25rem' }}>{post.title}</h1>
-        <p style={{ color: '#555', marginTop: 0, marginBottom: '1rem' }}>{post.author}</p>
-        <p style={{ lineHeight: 1.7, marginBottom: '1rem' }}>{post.description}</p>
-
-        {post.tags.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '1rem' }}>
-            {post.tags.map((tag) => (
-              <Link key={tag.tagId} to={`/tags/${tag.name}`} style={{ fontSize: '0.8rem', background: '#eee', padding: '2px 8px', borderRadius: '12px', textDecoration: 'none', color: '#555' }}>
-                #{tag.name}
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {isAuthenticated && (
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-            <button
-              onClick={() => post.liked ? unlike.mutate() : like.mutate()}
-              disabled={like.isPending || unlike.isPending}
-              style={{ padding: '6px 16px', borderRadius: '20px', border: '1px solid #ccc', cursor: 'pointer', background: post.liked ? '#e74c3c' : '#fff', color: post.liked ? '#fff' : '#333' }}
-            >
-              ♥ {post.likeCount}
-            </button>
-            <button
-              onClick={() => post.saved ? unsave.mutate() : save.mutate()}
-              disabled={save.isPending || unsave.isPending}
-              style={{ padding: '6px 16px', borderRadius: '20px', border: '1px solid #ccc', cursor: 'pointer', background: post.saved ? '#f39c12' : '#fff', color: post.saved ? '#fff' : '#333' }}
-            >
-              🔖 {post.saved ? 'Saved' : 'Save'}
-            </button>
-            <span style={{ color: '#888', alignSelf: 'center', fontSize: '0.875rem' }}>👁 {post.viewCount} views</span>
-          </div>
-        )}
-
-        <h3 style={{ borderTop: '1px solid #eee', paddingTop: '1rem' }}>Comments ({post.commentCount})</h3>
-
-        {isAuthenticated && (
-          <form onSubmit={handleComment} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-            <input
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder="Add a comment..."
-              maxLength={2000}
-              style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
-            />
-            <button type="submit" disabled={addComment.isPending || !commentText.trim()} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: '#646cff', color: '#fff', cursor: 'pointer' }}>
-              Send
-            </button>
-          </form>
-        )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {comments.map((c) => (
-            <div key={c.commentId} style={{ background: '#f9f9f9', borderRadius: '8px', padding: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                <Link to={`/u/${c.author.nickname}`} style={{ fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none', color: '#333' }}>
-                  @{c.author.nickname}
-                </Link>
-                <span style={{ color: '#aaa', fontSize: '0.75rem' }}>{new Date(c.createdAt).toLocaleString()}</span>
-                {(user?.nickname === c.author.nickname || user?.role === 'moderator' || user?.role === 'admin') && (
-                  <button
-                    onClick={() => deleteComment.mutate(c.commentId)}
-                    style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '0.8rem' }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-              <p style={{ margin: 0, fontSize: '0.9rem' }}>{c.text}</p>
+          {isAuthenticated && (
+            <div className="flex gap-3 pb-5 border-b border-[#f3ede4]">
+              <button
+                onClick={() => post.liked ? unlike.mutate() : like.mutate()}
+                disabled={like.isPending || unlike.isPending}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm border cursor-pointer transition disabled:opacity-50 ${post.liked ? 'bg-red-50 border-red-200 text-red-500 font-semibold' : 'bg-white border-[#e8e2d9] text-[#7a6f68] hover:border-red-200 hover:text-red-400'}`}
+              >
+                {post.liked ? '♥' : '♡'} {post.likeCount}
+              </button>
+              <button
+                onClick={() => post.saved ? unsave.mutate() : save.mutate()}
+                disabled={save.isPending || unsave.isPending}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm border cursor-pointer transition disabled:opacity-50 ${post.saved ? 'bg-amber-50 border-amber-200 text-amber-500 font-semibold' : 'bg-white border-[#e8e2d9] text-[#7a6f68] hover:border-amber-200 hover:text-amber-400'}`}
+              >
+                {post.saved ? '🔖 Saved' : '🏷️ Save'}
+              </button>
+              <span className="ml-auto text-xs text-[#7a6f68] self-center">👁 {post.viewCount} views</span>
             </div>
-          ))}
-        </div>
+          )}
 
-        {hasMore && (
-          <button onClick={() => loadMore()} disabled={commentsFetching} style={{ marginTop: '1rem', width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', cursor: 'pointer', background: '#f5f5f5' }}>
-            {commentsFetching ? 'Loading...' : 'Load more comments'}
-          </button>
-        )}
-      </div>
+          {/* Comments */}
+          <div className="mt-5">
+            <h3 className="font-serif font-bold text-[#1c1714] mb-4">Comments ({post.commentCount})</h3>
+
+            {isAuthenticated && (
+              <form onSubmit={handleComment} className="flex gap-2 mb-5">
+                <input value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Add a comment…" maxLength={2000}
+                  className="flex-1 px-3 py-2 rounded-lg border border-[#e8e2d9] bg-white text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 transition" />
+                <button type="submit" disabled={addComment.isPending || !commentText.trim()}
+                  className="px-4 py-2 rounded-lg bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-medium border-none cursor-pointer transition disabled:opacity-50">
+                  Post
+                </button>
+              </form>
+            )}
+
+            <div className="space-y-3">
+              {comments.map((c) => (
+                <div key={c.commentId} className="bg-[#faf7f2] rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Link to={`/u/${c.author.nickname}`} className="font-semibold text-sm no-underline text-[#2d2926] hover:text-[#5b63d3] transition-colors">
+                      @{c.author.nickname}
+                    </Link>
+                    <span className="text-xs text-[#7a6f68]">{new Date(c.createdAt).toLocaleString()}</span>
+                    {(user?.nickname === c.author.nickname || user?.role === 'moderator' || user?.role === 'admin') && (
+                      <button onClick={() => deleteComment.mutate(c.commentId)}
+                        className="ml-auto text-xs text-[#b0a9a1] hover:text-red-400 bg-transparent border-none cursor-pointer transition">✕</button>
+                    )}
+                  </div>
+                  <p className="text-sm text-[#2d2926] m-0">{c.text}</p>
+                </div>
+              ))}
+            </div>
+
+            {hasMore && (
+              <button onClick={() => loadMore()} disabled={commentsFetching}
+                className="mt-4 w-full py-2 rounded-xl border border-[#e8e2d9] bg-white text-sm text-[#7a6f68] hover:border-[#5b63d3] cursor-pointer transition disabled:opacity-50">
+                {commentsFetching ? 'Loading…' : 'Load more comments'}
+              </button>
+            )}
+          </div>
+        </div>
+      </article>
 
       {showEdit && post && <EditPostModal post={post} onClose={() => setShowEdit(false)} />}
     </div>

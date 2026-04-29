@@ -26,31 +26,20 @@ export function ShelvesPage() {
     e.preventDefault();
     if (!addingTo) return;
     await addBook.mutateAsync({ shelfId: addingTo, title, author });
-    setTitle('');
-    setAuthor('');
-    setAddingTo(null);
+    setTitle(''); setAuthor(''); setAddingTo(null);
   };
 
-  if (profileLoading || isLoading) {
-    return <p style={{ textAlign: 'center', padding: '2rem' }}>Loading...</p>;
-  }
-
-  if (!profile) {
-    return <p style={{ textAlign: 'center', padding: '2rem' }}>User not found.</p>;
-  }
+  if (profileLoading || isLoading) return <div className="max-w-2xl mx-auto px-4 py-12 text-center text-[#7a6f68]">Loading…</div>;
+  if (!profile) return <div className="max-w-2xl mx-auto px-4 py-12 text-center text-[#7a6f68]">User not found.</div>;
 
   return (
-    <div style={{ maxWidth: '720px', margin: '0 auto', padding: '1.5rem 1rem' }}>
-      <Link to={`/u/${nickname}`} style={{ color: '#646cff', textDecoration: 'none', fontSize: '0.875rem' }}>← @{nickname}</Link>
-      <h2 style={{ margin: '0.75rem 0 1.5rem' }}>Bookshelves</h2>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <Link to={`/u/${nickname}`} className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">← @{nickname}</Link>
+      <h2 className="font-serif text-2xl font-bold text-[#1c1714] mt-3 mb-6">📚 Bookshelves</h2>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="space-y-4">
         {shelves?.map((shelf) => (
-          <ShelfCard
-            key={shelf.shelfId}
-            shelf={shelf}
-            allShelves={shelves}
-            isOwn={isOwn}
+          <ShelfCard key={shelf.shelfId} shelf={shelf} allShelves={shelves} isOwn={isOwn}
             onAdd={() => setAddingTo(shelf.shelfId)}
             onDelete={(bookId) => deleteBook.mutate(bookId)}
             onMove={(bookId, toShelfId) => moveBook.mutate({ bookId, toShelfId })}
@@ -59,30 +48,20 @@ export function ShelvesPage() {
       </div>
 
       {addingTo !== null && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px' }}>
-            <h3 style={{ marginTop: 0 }}>Add a book</h3>
-            <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title"
-                required
-                maxLength={255}
-                style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
-              />
-              <input
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Author"
-                required
-                maxLength={255}
-                style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
-              />
-              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                <button type="button" onClick={() => setAddingTo(null)} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" disabled={addBook.isPending} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: '#646cff', color: '#fff', cursor: 'pointer' }}>
-                  {addBook.isPending ? 'Adding...' : 'Add'}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-serif font-bold text-[#1c1714] mb-4">Add a book</h3>
+            <form onSubmit={handleAdd} className="flex flex-col gap-3">
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required maxLength={255}
+                className="w-full px-3 py-2.5 rounded-lg border border-[#e8e2d9] bg-white text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 transition" />
+              <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Author" required maxLength={255}
+                className="w-full px-3 py-2.5 rounded-lg border border-[#e8e2d9] bg-white text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 transition" />
+              <div className="flex gap-2 justify-end mt-1">
+                <button type="button" onClick={() => setAddingTo(null)}
+                  className="px-4 py-2 rounded-lg border border-[#e8e2d9] bg-white text-sm text-[#7a6f68] cursor-pointer hover:border-[#5b63d3] transition">Cancel</button>
+                <button type="submit" disabled={addBook.isPending}
+                  className="px-4 py-2 rounded-lg bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-semibold border-none cursor-pointer transition disabled:opacity-50">
+                  {addBook.isPending ? 'Adding…' : 'Add'}
                 </button>
               </div>
             </form>
@@ -104,41 +83,35 @@ interface ShelfCardProps {
 
 function ShelfCard({ shelf, allShelves, isOwn, onAdd, onDelete, onMove }: ShelfCardProps) {
   return (
-    <section style={{ background: '#fafafa', borderRadius: '12px', padding: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <h3 style={{ margin: 0 }}>{shelf.name}</h3>
+    <section className="bg-white rounded-xl border border-[#e8e2d9] shadow-sm p-5">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-serif font-bold text-[#1c1714]">{shelf.name}</h3>
         {isOwn && (
-          <button onClick={onAdd} style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid #646cff', background: 'transparent', color: '#646cff', cursor: 'pointer', fontSize: '0.875rem' }}>
+          <button onClick={onAdd}
+            className="text-xs px-3 py-1.5 rounded-full border border-[#5b63d3] text-[#5b63d3] bg-white hover:bg-[#5b63d3] hover:text-white cursor-pointer transition">
             + Add book
           </button>
         )}
       </div>
 
       {shelf.books.length === 0 ? (
-        <p style={{ color: '#aaa', fontSize: '0.875rem', margin: 0 }}>No books yet.</p>
+        <p className="text-sm text-[#b0a9a1]">No books yet.</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <ul className="space-y-2">
           {shelf.books.map((book: Book) => (
-            <li key={book.bookId} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: '#fff', borderRadius: '8px' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>{book.title}</div>
-                <div style={{ fontSize: '0.85rem', color: '#666' }}>{book.author}</div>
+            <li key={book.bookId} className="flex items-center gap-3 p-3 bg-[#faf7f2] rounded-lg">
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm text-[#1c1714] truncate">{book.title}</div>
+                <div className="text-xs text-[#7a6f68] italic">{book.author}</div>
               </div>
               {isOwn && (
                 <>
-                  <select
-                    value={shelf.shelfId}
-                    onChange={(e) => onMove(book.bookId, Number(e.target.value))}
-                    style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem' }}
-                  >
-                    {allShelves.map((s) => (
-                      <option key={s.shelfId} value={s.shelfId}>{s.name}</option>
-                    ))}
+                  <select value={shelf.shelfId} onChange={(e) => onMove(book.bookId, Number(e.target.value))}
+                    className="text-xs px-2 py-1 rounded-lg border border-[#e8e2d9] bg-white text-[#7a6f68] cursor-pointer focus:outline-none focus:border-[#5b63d3]">
+                    {allShelves.map((s) => <option key={s.shelfId} value={s.shelfId}>{s.name}</option>)}
                   </select>
-                  <button
-                    onClick={() => onDelete(book.bookId)}
-                    style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer' }}
-                  >✕</button>
+                  <button onClick={() => onDelete(book.bookId)}
+                    className="text-[#b0a9a1] hover:text-red-400 bg-transparent border-none cursor-pointer text-sm transition">✕</button>
                 </>
               )}
             </li>

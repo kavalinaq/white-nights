@@ -10,27 +10,32 @@ export function FeedPage() {
   const [reportPostId, setReportPostId] = useState<number | null>(null);
 
   return (
-    <div className="feed-page" style={{ maxWidth: '640px', margin: '0 auto', padding: '1.5rem 1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ margin: 0 }}>Feed</h2>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="font-serif text-2xl font-bold text-[#1c1714]">Your Feed</h2>
         <button
           onClick={() => setShowCreate(true)}
-          style={{ padding: '8px 18px', borderRadius: '20px', border: 'none', background: '#646cff', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
+          className="px-4 py-2 bg-[#5b63d3] hover:bg-[#4951c4] text-white rounded-full text-sm font-semibold border-none cursor-pointer transition-colors"
         >
           + New post
         </button>
       </div>
 
-      {isLoading && <p style={{ textAlign: 'center', color: '#888' }}>Loading feed...</p>}
-
-      {!isLoading && items.length === 0 && (
-        <div style={{ textAlign: 'center', color: '#888', marginTop: '3rem' }}>
-          <p>Your feed is empty.</p>
-          <p style={{ fontSize: '0.875rem' }}>Follow some users to see their posts here.</p>
+      {isLoading && (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => <div key={i} className="h-40 bg-white rounded-xl border border-[#e8e2d9] animate-pulse" />)}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {!isLoading && items.length === 0 && (
+        <div className="text-center py-16 text-[#7a6f68]">
+          <div className="text-5xl mb-4">📚</div>
+          <p className="font-serif text-lg text-[#2d2926] mb-1">Your feed is empty</p>
+          <p className="text-sm">Follow some readers to see their posts here.</p>
+        </div>
+      )}
+
+      <div className="space-y-4">
         {items.map((post) => (
           <PostCard key={post.postId} post={post} onReport={(id) => setReportPostId(id)} />
         ))}
@@ -38,18 +43,15 @@ export function FeedPage() {
 
       {hasMore && (
         <button
-          onClick={() => loadMore()}
-          disabled={isFetching}
-          style={{ marginTop: '1.5rem', width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', cursor: 'pointer', background: '#f5f5f5' }}
+          onClick={() => loadMore()} disabled={isFetching}
+          className="mt-6 w-full py-2.5 rounded-xl border border-[#e8e2d9] bg-white text-sm text-[#7a6f68] hover:border-[#5b63d3] hover:text-[#5b63d3] cursor-pointer transition disabled:opacity-50"
         >
-          {isFetching ? 'Loading...' : 'Load more'}
+          {isFetching ? 'Loading…' : 'Load more'}
         </button>
       )}
 
       {showCreate && <CreatePostModal onClose={() => setShowCreate(false)} />}
-      {reportPostId !== null && (
-        <ReportModal targetType="post" targetId={reportPostId} onClose={() => setReportPostId(null)} />
-      )}
+      {reportPostId !== null && <ReportModal targetType="post" targetId={reportPostId} onClose={() => setReportPostId(null)} />}
     </div>
   );
 }

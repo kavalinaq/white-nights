@@ -11,36 +11,29 @@ export function TagPage() {
   const [reportPostId, setReportPostId] = useState<number | null>(null);
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', padding: '1.5rem 1rem' }}>
-      <Link to="/search" style={{ color: '#646cff', textDecoration: 'none', fontSize: '0.875rem' }}>← Search</Link>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <Link to="/search" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">← Search</Link>
+      <h2 className="font-serif text-2xl font-bold text-[#1c1714] mt-3 mb-6">#{tagName}</h2>
 
-      <h2 style={{ margin: '0.75rem 0 1.5rem' }}>#{tagName}</h2>
-
-      {isLoading && <p style={{ color: '#888', textAlign: 'center' }}>Loading...</p>}
-
+      {isLoading && <p className="text-[#7a6f68] text-sm text-center py-8">Loading…</p>}
       {!isLoading && items.length === 0 && (
-        <p style={{ color: '#888', textAlign: 'center' }}>No posts with this tag yet.</p>
+        <p className="text-[#7a6f68] text-sm text-center py-8">No posts with this tag yet.</p>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="space-y-4">
         {items.map((post) => (
           <PostCard key={post.postId} post={post} onReport={(id) => setReportPostId(id)} />
         ))}
       </div>
 
       {hasMore && (
-        <button
-          onClick={() => loadMore()}
-          disabled={isFetching}
-          style={{ marginTop: '1.5rem', width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc', cursor: 'pointer', background: '#f5f5f5' }}
-        >
-          {isFetching ? 'Loading...' : 'Load more'}
+        <button onClick={() => loadMore()} disabled={isFetching}
+          className="mt-6 w-full py-2.5 rounded-xl border border-[#e8e2d9] bg-white text-sm text-[#7a6f68] hover:border-[#5b63d3] hover:text-[#5b63d3] cursor-pointer transition disabled:opacity-50">
+          {isFetching ? 'Loading…' : 'Load more'}
         </button>
       )}
 
-      {reportPostId !== null && (
-        <ReportModal targetType="post" targetId={reportPostId} onClose={() => setReportPostId(null)} />
-      )}
+      {reportPostId !== null && <ReportModal targetType="post" targetId={reportPostId} onClose={() => setReportPostId(null)} />}
     </div>
   );
 }

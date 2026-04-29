@@ -4,11 +4,9 @@ import { useTrackerMonth, useUpsertTrackerEntry, useDeleteTrackerEntry } from '.
 function formatMonth(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`;
 }
-
 function formatDate(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
-
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function TrackerPage() {
@@ -26,37 +24,19 @@ export function TrackerPage() {
 
   const entryByDate = useMemo(() => {
     const map: Record<string, number | null> = {};
-    entries?.forEach((e) => {
-      map[e.date] = e.pagesRead;
-    });
+    entries?.forEach((e) => { map[e.date] = e.pagesRead; });
     return map;
   }, [entries]);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
-  const offset = (firstDay + 6) % 7; // Monday-based week
-
+  const offset = (firstDay + 6) % 7;
   const cells: (number | null)[] = [];
   for (let i = 0; i < offset; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
-  const prevMonth = () => {
-    if (month === 0) {
-      setMonth(11);
-      setYear(year - 1);
-    } else {
-      setMonth(month - 1);
-    }
-  };
-
-  const nextMonth = () => {
-    if (month === 11) {
-      setMonth(0);
-      setYear(year + 1);
-    } else {
-      setMonth(month + 1);
-    }
-  };
+  const prevMonth = () => { if (month === 0) { setMonth(11); setYear(year - 1); } else setMonth(month - 1); };
+  const nextMonth = () => { if (month === 11) { setMonth(0); setYear(year + 1); } else setMonth(month + 1); };
 
   const openDay = (day: number) => {
     const date = formatDate(year, month, day);
@@ -81,77 +61,71 @@ export function TrackerPage() {
   const monthName = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.5rem 1rem' }}>
-      <h2 style={{ margin: '0 0 1rem' }}>Reading tracker</h2>
+    <div className="max-w-lg mx-auto px-4 py-6">
+      <h2 className="font-serif text-2xl font-bold text-[#1c1714] mb-5">Reading Tracker</h2>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <button onClick={prevMonth} style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}>‹</button>
-        <h3 style={{ margin: 0, textTransform: 'capitalize' }}>{monthName}</h3>
-        <button onClick={nextMonth} style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}>›</button>
-      </div>
+      <div className="bg-white rounded-2xl border border-[#e8e2d9] shadow-sm p-5">
+        <div className="flex items-center justify-between mb-5">
+          <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition">‹</button>
+          <h3 className="font-serif font-bold text-[#1c1714] capitalize">{monthName}</h3>
+          <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition">›</button>
+        </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '0.5rem' }}>
-        {WEEKDAYS.map((d) => (
-          <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', color: '#888', fontWeight: 600 }}>{d}</div>
-        ))}
-      </div>
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {WEEKDAYS.map((d) => <div key={d} className="text-center text-xs font-semibold text-[#7a6f68] py-1">{d}</div>)}
+        </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-        {cells.map((day, idx) => {
-          if (day === null) return <div key={idx} />;
-          const date = formatDate(year, month, day);
-          const hasEntry = date in entryByDate;
-          const pagesRead = entryByDate[date];
-          const isToday = date === formatDate(today.getFullYear(), today.getMonth(), today.getDate());
-          return (
-            <button
-              key={idx}
-              onClick={() => openDay(day)}
-              style={{
-                aspectRatio: '1',
-                borderRadius: '8px',
-                border: isToday ? '2px solid #646cff' : '1px solid #eee',
-                background: hasEntry ? '#646cff' : '#fff',
-                color: hasEntry ? '#fff' : '#333',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.875rem',
-                padding: 0,
-              }}
-            >
-              <span style={{ fontWeight: hasEntry ? 700 : 400 }}>{day}</span>
-              {pagesRead !== null && pagesRead !== undefined && (
-                <span style={{ fontSize: '0.65rem' }}>{pagesRead}p</span>
-              )}
-            </button>
-          );
-        })}
+        <div className="grid grid-cols-7 gap-1">
+          {cells.map((day, idx) => {
+            if (day === null) return <div key={idx} />;
+            const date = formatDate(year, month, day);
+            const hasEntry = date in entryByDate;
+            const pagesRead = entryByDate[date];
+            const isToday = date === formatDate(today.getFullYear(), today.getMonth(), today.getDate());
+            return (
+              <button key={idx} onClick={() => openDay(day)}
+                className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs cursor-pointer transition
+                  ${hasEntry ? 'bg-[#5b63d3] text-white border border-[#5b63d3]' : `bg-white text-[#2d2926] border hover:border-[#5b63d3] ${isToday ? 'border-[#5b63d3] border-2 font-bold' : 'border-[#e8e2d9]'}`}
+                `}
+              >
+                <span className={hasEntry ? 'font-bold' : ''}>{day}</span>
+                {pagesRead !== null && pagesRead !== undefined && (
+                  <span className="text-[10px] leading-tight opacity-90">{pagesRead}p</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {selectedDate && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '360px' }}>
-            <h3 style={{ marginTop: 0 }}>{selectedDate}</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-serif font-bold text-[#1c1714] mb-4">{selectedDate}</h3>
             <input
-              type="number"
-              min={0}
-              value={pagesInput}
-              onChange={(e) => setPagesInput(e.target.value)}
+              type="number" min={0} value={pagesInput}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val !== '' && Number(val) < 0) return;
+                setPagesInput(val);
+              }}
               placeholder="Pages read (optional)"
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', boxSizing: 'border-box', marginBottom: '0.75rem' }}
+              className="w-full px-3 py-2.5 rounded-lg border border-[#e8e2d9] bg-white text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 mb-4"
             />
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'space-between' }}>
+            <div className="flex gap-2 justify-between">
               {entryByDate[selectedDate] !== undefined ? (
-                <button onClick={removeDay} disabled={remove.isPending} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: '#e74c3c', color: '#fff', cursor: 'pointer' }}>
+                <button onClick={removeDay} disabled={remove.isPending}
+                  className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium border-none cursor-pointer transition disabled:opacity-50">
                   Delete
                 </button>
               ) : <span />}
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setSelectedDate(null)} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer' }}>Cancel</button>
-                <button onClick={saveDay} disabled={upsert.isPending} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: '#646cff', color: '#fff', cursor: 'pointer' }}>
+              <div className="flex gap-2">
+                <button onClick={() => setSelectedDate(null)}
+                  className="px-4 py-2 rounded-lg border border-[#e8e2d9] bg-white text-sm text-[#7a6f68] cursor-pointer hover:border-[#5b63d3] transition">
+                  Cancel
+                </button>
+                <button onClick={saveDay} disabled={upsert.isPending}
+                  className="px-4 py-2 rounded-lg bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-medium border-none cursor-pointer transition disabled:opacity-50">
                   Save
                 </button>
               </div>

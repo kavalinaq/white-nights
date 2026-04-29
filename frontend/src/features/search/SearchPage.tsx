@@ -16,61 +16,48 @@ export function SearchPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setDebouncedQ(input);
-      if (input.trim()) {
-        setSearchParams({ q: input.trim() }, { replace: true });
-      } else {
-        setSearchParams({}, { replace: true });
-      }
+      if (input.trim()) setSearchParams({ q: input.trim() }, { replace: true });
+      else setSearchParams({}, { replace: true });
     }, 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [input, setSearchParams]);
 
   const { data, isLoading } = useSearch(debouncedQ);
-
   const hasResults = data && (data.users.length > 0 || data.posts.length > 0 || data.tags.length > 0);
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 1rem' }}>
-      <h2 style={{ margin: '0 0 1rem' }}>Search</h2>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <h2 className="font-serif text-2xl font-bold text-[#1c1714] mb-4">Search</h2>
 
-      <input
-        autoFocus
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Search users, posts, tags..."
-        style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #ccc', fontSize: '1rem', boxSizing: 'border-box' }}
-      />
+      <div className="relative mb-6">
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7a6f68]">🔍</span>
+        <input
+          autoFocus value={input} onChange={(e) => setInput(e.target.value)}
+          placeholder="Search users, posts, tags…"
+          className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#e8e2d9] bg-white text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 transition"
+        />
+      </div>
 
-      {isLoading && debouncedQ && (
-        <p style={{ color: '#888', marginTop: '1rem' }}>Searching...</p>
-      )}
-
+      {isLoading && debouncedQ && <p className="text-[#7a6f68] text-sm">Searching…</p>}
       {debouncedQ && !isLoading && !hasResults && (
-        <p style={{ color: '#888', marginTop: '1.5rem', textAlign: 'center' }}>No results for "{debouncedQ}"</p>
+        <p className="text-[#7a6f68] text-sm text-center py-8">No results for "{debouncedQ}"</p>
       )}
 
       {data && (
-        <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
+        <div className="space-y-8">
           {data.users.length > 0 && (
             <section>
-              <h3 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Users</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <h3 className="text-xs font-bold text-[#7a6f68] uppercase tracking-wider mb-3">People</h3>
+              <div className="space-y-2">
                 {data.users.map((u) => (
-                  <Link
-                    key={u.userId}
-                    to={`/u/${u.nickname}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: '8px', textDecoration: 'none', color: 'inherit', background: '#f9f9f9' }}
-                  >
+                  <Link key={u.userId} to={`/u/${u.nickname}`}
+                    className="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#e8e2d9] no-underline hover:border-[#5b63d3] hover:shadow-sm transition">
                     {u.avatarUrl
-                      ? <img src={u.avatarUrl} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
-                      : <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ddd', flexShrink: 0 }} />
-                    }
+                      ? <img src={u.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                      : <div className="w-9 h-9 rounded-full bg-[#e8e2d9] flex-shrink-0" />}
                     <div>
-                      <div style={{ fontWeight: 600 }}>@{u.nickname}</div>
-                      {u.isPrivate && <div style={{ fontSize: '0.75rem', color: '#aaa' }}>Private</div>}
+                      <div className="text-sm font-semibold text-[#2d2926]">@{u.nickname}</div>
+                      {u.isPrivate && <div className="text-xs text-[#7a6f68]">Private account</div>}
                     </div>
                   </Link>
                 ))}
@@ -80,14 +67,11 @@ export function SearchPage() {
 
           {data.tags.length > 0 && (
             <section>
-              <h3 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tags</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h3 className="text-xs font-bold text-[#7a6f68] uppercase tracking-wider mb-3">Tags</h3>
+              <div className="flex flex-wrap gap-2">
                 {data.tags.map((tag) => (
-                  <Link
-                    key={tag.tagId}
-                    to={`/tags/${tag.name}`}
-                    style={{ padding: '4px 12px', borderRadius: '16px', background: '#eee', textDecoration: 'none', color: '#555', fontSize: '0.875rem' }}
-                  >
+                  <Link key={tag.tagId} to={`/tags/${tag.name}`}
+                    className="text-sm bg-[#eef0ff] text-[#5b63d3] px-3 py-1 rounded-full no-underline hover:bg-[#5b63d3] hover:text-white transition font-medium">
                     #{tag.name}
                   </Link>
                 ))}
@@ -97,21 +81,18 @@ export function SearchPage() {
 
           {data.posts.length > 0 && (
             <section>
-              <h3 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Posts</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <h3 className="text-xs font-bold text-[#7a6f68] uppercase tracking-wider mb-3">Posts</h3>
+              <div className="space-y-4">
                 {data.posts.map((post) => (
                   <PostCard key={post.postId} post={post} onReport={(id) => setReportPostId(id)} />
                 ))}
               </div>
             </section>
           )}
-
         </div>
       )}
 
-      {reportPostId !== null && (
-        <ReportModal targetType="post" targetId={reportPostId} onClose={() => setReportPostId(null)} />
-      )}
+      {reportPostId !== null && <ReportModal targetType="post" targetId={reportPostId} onClose={() => setReportPostId(null)} />}
     </div>
   );
 }
