@@ -1,26 +1,67 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useChats, useCreateChat, useDeleteChat, type ChatMessage, type ChatPreview } from './hooks/useChats';
+import { useChats, useCreateChat, useDeleteChat, useDeleteMessage, type ChatMessage, type ChatPreview } from './hooks/useChats';
 import { useMessages } from './hooks/useMessages';
 import { useChatSocket } from './hooks/useChatSocket';
 import { useAuthStore } from '../../shared/store/useAuthStore';
+import { useUnreadStore, isUnread } from '../../shared/store/useUnreadStore';
 import client from '../../shared/api/client';
+
+interface UserSuggestion {
+  userId: number;
+  nickname: string;
+  avatarUrl: string | null;
+}
+
+function useUserSuggestions(query: string) {
+  return useQuery({
+    queryKey: ['user-suggestions', query],
+    queryFn: async () => {
+      if (!query.trim()) return [];
+      const res = await client.get<{ users: UserSuggestion[] }>('/search', { params: { q: query } });
+      return res.data.users.slice(0, 6);
+    },
+    enabled: query.trim().length >= 1,
+    staleTime: 5000,
+  });
+}
 
 export function ChatsPage() {
   const { id } = useParams<{ id: string }>();
   const activeId = id ? Number(id) : undefined;
   const { data: chats, isLoading } = useChats();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { lastSeenAt } = useUnreadStore();
 
   const [showNewChat, setShowNewChat] = useState(false);
+  const [chatMode, setChatMode] = useState<'direct' | 'group'>('direct');
+
+  // Direct chat state
   const [peerNickname, setPeerNickname] = useState('');
   const [newChatError, setNewChatError] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Group chat state
+  const [groupName, setGroupName] = useState('');
+  const [groupMemberInput, setGroupMemberInput] = useState('');
+  const [groupMembers, setGroupMembers] = useState<UserSuggestion[]>([]);
+  const [showGroupSuggestions, setShowGroupSuggestions] = useState(false);
+  const [groupChatError, setGroupChatError] = useState('');
+
   const createChat = useCreateChat();
+
+  const { data: directSuggestions } = useUserSuggestions(peerNickname);
+  const { data: groupSuggestions } = useUserSuggestions(groupMemberInput);
 
   const activeChat = chats?.find((c) => c.chatId === activeId);
 
-  const handleNewChat = async (e: React.FormEvent) => {
+  const totalUnread = (chats ?? []).filter((c) =>
+    isUnread(c.lastMessage, c.chatId, user?.nickname, lastSeenAt)
+  ).length;
+
+  const handleNewDirectChat = async (e: React.FormEvent) => {
     e.preventDefault();
     setNewChatError('');
     try {
@@ -35,6 +76,34 @@ export function ChatsPage() {
     }
   };
 
+  const handleAddGroupMember = (u: UserSuggestion) => {
+    if (!groupMembers.find((m) => m.userId === u.userId)) {
+      setGroupMembers((prev) => [...prev, u]);
+    }
+    setGroupMemberInput('');
+    setShowGroupSuggestions(false);
+  };
+
+  const handleNewGroupChat = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGroupChatError('');
+    if (!groupName.trim()) { setGroupChatError('Group name is required.'); return; }
+    try {
+      const result = await createChat.mutateAsync({
+        name: groupName.trim(),
+        memberIds: groupMembers.map((m) => m.userId),
+      });
+      setGroupName(''); setGroupMembers([]); setGroupMemberInput(''); setShowNewChat(false);
+      navigate(`/chat/${result.data.chatId}`);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      setGroupChatError(msg || 'Error creating group chat.');
+    }
+  };
+
+  // Expose totalUnread for parent (App.tsx reads from store directly)
+  void totalUnread;
+
   return (
     <div className="flex h-full border-r border-[#e8e2d9]">
       {/* Sidebar */}
@@ -42,7 +111,7 @@ export function ChatsPage() {
         <div className="px-4 py-3 border-b border-[#e8e2d9] flex items-center justify-between">
           <h3 className="font-serif font-bold text-[#1c1714]">Messages</h3>
           <button
-            onClick={() => { setShowNewChat((v) => !v); setNewChatError(''); }}
+            onClick={() => { setShowNewChat((v) => !v); setNewChatError(''); setGroupChatError(''); }}
             className={`text-xs px-3 py-1.5 rounded-full border cursor-pointer transition
               ${showNewChat ? 'bg-[#5b63d3] border-[#5b63d3] text-white' : 'border-[#5b63d3] text-[#5b63d3] bg-white hover:bg-[#5b63d3] hover:text-white'}`}
           >
@@ -51,24 +120,129 @@ export function ChatsPage() {
         </div>
 
         {showNewChat && (
-          <form onSubmit={handleNewChat} className="px-3 py-3 border-b border-[#e8e2d9] flex flex-col gap-2">
-            <input
-              autoFocus value={peerNickname} onChange={(e) => setPeerNickname(e.target.value)}
-              placeholder="Enter @username…" required
-              className="w-full px-3 py-2 rounded-lg border border-[#e8e2d9] bg-[#faf7f2] text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 transition"
-            />
-            {newChatError && <p className="text-red-500 text-xs">{newChatError}</p>}
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setShowNewChat(false)}
-                className="flex-1 py-2 rounded-lg border border-[#e8e2d9] text-sm text-[#7a6f68] cursor-pointer transition hover:border-[#5b63d3]">
-                Cancel
+          <div className="px-3 py-3 border-b border-[#e8e2d9] flex flex-col gap-2">
+            {/* Mode tabs */}
+            <div className="flex rounded-lg overflow-hidden border border-[#e8e2d9]">
+              <button
+                type="button"
+                onClick={() => { setChatMode('direct'); setNewChatError(''); }}
+                className={`flex-1 py-1.5 text-xs font-medium transition cursor-pointer border-none ${chatMode === 'direct' ? 'bg-[#5b63d3] text-white' : 'bg-white text-[#7a6f68] hover:bg-[#faf7f2]'}`}
+              >
+                Direct
               </button>
-              <button type="submit" disabled={createChat.isPending || !peerNickname.trim()}
-                className="flex-1 py-2 rounded-lg bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-medium border-none cursor-pointer transition disabled:opacity-50">
-                {createChat.isPending ? 'Starting…' : 'Start'}
+              <button
+                type="button"
+                onClick={() => { setChatMode('group'); setGroupChatError(''); }}
+                className={`flex-1 py-1.5 text-xs font-medium transition cursor-pointer border-none ${chatMode === 'group' ? 'bg-[#5b63d3] text-white' : 'bg-white text-[#7a6f68] hover:bg-[#faf7f2]'}`}
+              >
+                Group
               </button>
             </div>
-          </form>
+
+            {chatMode === 'direct' ? (
+              <form onSubmit={handleNewDirectChat} className="flex flex-col gap-2">
+                <div className="relative">
+                  <input
+                    autoFocus value={peerNickname}
+                    onChange={(e) => { setPeerNickname(e.target.value); setShowSuggestions(true); }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    placeholder="Enter @username…" required
+                    className="w-full px-3 py-2 rounded-lg border border-[#e8e2d9] bg-[#faf7f2] text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 transition"
+                  />
+                  {showSuggestions && directSuggestions && directSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-20 bg-white border border-[#e8e2d9] rounded-lg shadow-lg mt-1 overflow-hidden">
+                      {directSuggestions.map((u) => (
+                        <button
+                          key={u.userId} type="button"
+                          onMouseDown={() => { setPeerNickname(u.nickname); setShowSuggestions(false); }}
+                          className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-[#eef0ff] cursor-pointer border-none bg-white transition"
+                        >
+                          {u.avatarUrl
+                            ? <img src={u.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+                            : <div className="w-6 h-6 rounded-full bg-[#e8e2d9] flex-shrink-0" />}
+                          <span className="font-medium text-[#2d2926]">@{u.nickname}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {newChatError && <p className="text-red-500 text-xs">{newChatError}</p>}
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setShowNewChat(false)}
+                    className="flex-1 py-2 rounded-lg border border-[#e8e2d9] text-sm text-[#7a6f68] cursor-pointer transition hover:border-[#5b63d3]">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={createChat.isPending || !peerNickname.trim()}
+                    className="flex-1 py-2 rounded-lg bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-medium border-none cursor-pointer transition disabled:opacity-50">
+                    {createChat.isPending ? 'Starting…' : 'Start'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleNewGroupChat} className="flex flex-col gap-2">
+                <input
+                  autoFocus value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="Group name…" required
+                  className="w-full px-3 py-2 rounded-lg border border-[#e8e2d9] bg-[#faf7f2] text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 transition"
+                />
+                <div className="relative">
+                  <input
+                    value={groupMemberInput}
+                    onChange={(e) => { setGroupMemberInput(e.target.value); setShowGroupSuggestions(true); }}
+                    onFocus={() => setShowGroupSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowGroupSuggestions(false), 150)}
+                    placeholder="Add members…"
+                    className="w-full px-3 py-2 rounded-lg border border-[#e8e2d9] bg-[#faf7f2] text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 transition"
+                  />
+                  {showGroupSuggestions && groupSuggestions && groupSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-20 bg-white border border-[#e8e2d9] rounded-lg shadow-lg mt-1 overflow-hidden">
+                      {groupSuggestions
+                        .filter((u) => !groupMembers.find((m) => m.userId === u.userId))
+                        .map((u) => (
+                          <button
+                            key={u.userId} type="button"
+                            onMouseDown={() => handleAddGroupMember(u)}
+                            className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-[#eef0ff] cursor-pointer border-none bg-white transition"
+                          >
+                            {u.avatarUrl
+                              ? <img src={u.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+                              : <div className="w-6 h-6 rounded-full bg-[#e8e2d9] flex-shrink-0" />}
+                            <span className="font-medium text-[#2d2926]">@{u.nickname}</span>
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+                {groupMembers.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {groupMembers.map((m) => (
+                      <span key={m.userId} className="flex items-center gap-1 text-xs bg-[#eef0ff] text-[#5b63d3] px-2 py-0.5 rounded-full">
+                        @{m.nickname}
+                        <button
+                          type="button"
+                          onClick={() => setGroupMembers((prev) => prev.filter((x) => x.userId !== m.userId))}
+                          className="cursor-pointer text-[#5b63d3] hover:text-red-500 bg-transparent border-none p-0 ml-0.5 leading-none"
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {groupChatError && <p className="text-red-500 text-xs">{groupChatError}</p>}
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setShowNewChat(false)}
+                    className="flex-1 py-2 rounded-lg border border-[#e8e2d9] text-sm text-[#7a6f68] cursor-pointer transition hover:border-[#5b63d3]">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={createChat.isPending || !groupName.trim()}
+                    className="flex-1 py-2 rounded-lg bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-medium border-none cursor-pointer transition disabled:opacity-50">
+                    {createChat.isPending ? 'Creating…' : 'Create'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         )}
 
         <div className="flex-1 overflow-y-auto">
@@ -86,8 +260,13 @@ export function ChatsPage() {
             </div>
           )}
           {chats?.map((chat) => (
-            <ChatListItem key={chat.chatId} chat={chat} isActive={activeId === chat.chatId}
-              onClick={() => navigate(`/chat/${chat.chatId}`)} />
+            <ChatListItem
+              key={chat.chatId}
+              chat={chat}
+              isActive={activeId === chat.chatId}
+              unread={isUnread(chat.lastMessage, chat.chatId, user?.nickname, lastSeenAt)}
+              onClick={() => navigate(`/chat/${chat.chatId}`)}
+            />
           ))}
         </div>
       </aside>
@@ -113,7 +292,11 @@ export function ChatsPage() {
   );
 }
 
-function ChatListItem({ chat, isActive, onClick }: { chat: ChatPreview; isActive: boolean; onClick: () => void }) {
+function ChatListItem({
+  chat, isActive, unread, onClick,
+}: {
+  chat: ChatPreview; isActive: boolean; unread: boolean; onClick: () => void;
+}) {
   const lastText = chat.lastMessage
     ? (chat.lastMessage.isDeleted ? '[deleted]' : (chat.lastMessage.text ?? (chat.lastMessage.imageUrl ? '📷 Photo' : '')))
     : null;
@@ -134,13 +317,14 @@ function ChatListItem({ chat, isActive, onClick }: { chat: ChatPreview; isActive
         <div className={`text-sm font-semibold truncate ${isActive ? 'text-[#5b63d3]' : 'text-[#2d2926]'}`}>
           {chat.name || `Chat ${chat.chatId}`}
         </div>
-        {lastText && (
-          <div className="text-xs text-[#b0a9a1] truncate">{lastText}</div>
-        )}
-        {!lastText && (
-          <div className="text-xs text-[#b0a9a1] italic">No messages yet</div>
-        )}
+        {lastText
+          ? <div className={`text-xs truncate ${unread && !isActive ? 'text-[#2d2926] font-medium' : 'text-[#b0a9a1]'}`}>{lastText}</div>
+          : <div className="text-xs text-[#b0a9a1] italic">No messages yet</div>
+        }
       </div>
+      {unread && !isActive && (
+        <span className="w-2.5 h-2.5 rounded-full bg-[#5b63d3] flex-shrink-0" />
+      )}
     </button>
   );
 }
@@ -148,6 +332,7 @@ function ChatListItem({ chat, isActive, onClick }: { chat: ChatPreview; isActive
 function ChatView({ chatId, chatName, isGroup }: { chatId: number; chatName: string; isGroup: boolean }) {
   const { items: history, hasMore, loadMore, isFetching } = useMessages(chatId);
   const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
+  const [messagePatches, setMessagePatches] = useState<Record<number, Partial<ChatMessage>>>({});
   const [text, setText] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -156,9 +341,18 @@ function ChatView({ chatId, chatName, isGroup }: { chatId: number; chatName: str
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const deleteChat = useDeleteChat();
+  const deleteMessage = useDeleteMessage();
+  const { markRead } = useUnreadStore();
 
   const { connected, sendMessage } = useChatSocket(chatId, (msg) => {
-    setLiveMessages((prev) => [...prev, msg]);
+    setLiveMessages((prev) => {
+      const exists = prev.find((m) => m.messageId === msg.messageId);
+      if (exists) return prev.map((m) => m.messageId === msg.messageId ? msg : m);
+      return [...prev, msg];
+    });
+    if (msg.isDeleted) {
+      setMessagePatches((prev) => ({ ...prev, [msg.messageId]: { isDeleted: true, text: null, imageUrl: null } }));
+    }
   });
 
   const { data: presenceData } = useQuery({
@@ -169,7 +363,9 @@ function ChatView({ chatId, chatName, isGroup }: { chatId: number; chatName: str
   });
   const isPeerOnline = presenceData?.online ?? false;
 
-  const allMessages = [...history].reverse().concat(liveMessages);
+  const allMessages = [...history].reverse().concat(liveMessages).map((m) =>
+    messagePatches[m.messageId] ? { ...m, ...messagePatches[m.messageId] } : m
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -178,6 +374,11 @@ function ChatView({ chatId, chatName, isGroup }: { chatId: number; chatName: str
   useEffect(() => {
     inputRef.current?.focus();
   }, [chatId]);
+
+  // Mark chat as read when viewing
+  useEffect(() => {
+    markRead(chatId);
+  }, [chatId, markRead, allMessages.length]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,13 +400,31 @@ function ChatView({ chatId, chatName, isGroup }: { chatId: number; chatName: str
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     } catch {
-      // image will not appear; WS broadcast handles display
+      // image display handled via WS broadcast
     } finally {
       setUploadingImage(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteMessage = async (messageId: number) => {
+    // Optimistically mark deleted
+    setMessagePatches((prev) => ({ ...prev, [messageId]: { isDeleted: true, text: null, imageUrl: null } }));
+    setLiveMessages((prev) => prev.map((m) =>
+      m.messageId === messageId ? { ...m, isDeleted: true, text: null, imageUrl: null } : m
+    ));
+    try {
+      await deleteMessage.mutateAsync(messageId);
+    } catch {
+      // rollback patch on failure
+      setMessagePatches((prev) => {
+        const copy = { ...prev };
+        delete copy[messageId];
+        return copy;
+      });
+    }
+  };
+
+  const handleDeleteChat = async () => {
     if (!confirm('Delete this chat for everyone? This cannot be undone.')) return;
     await deleteChat.mutateAsync(chatId);
     navigate('/chat');
@@ -240,7 +459,7 @@ function ChatView({ chatId, chatName, isGroup }: { chatId: number; chatName: str
           )}
         </div>
         <button
-          onClick={handleDelete}
+          onClick={handleDeleteChat}
           disabled={deleteChat.isPending}
           className="text-xs text-[#b0a9a1] hover:text-red-500 bg-transparent border-none cursor-pointer transition disabled:opacity-50 flex-shrink-0"
           title="Delete chat"
@@ -267,25 +486,37 @@ function ChatView({ chatId, chatName, isGroup }: { chatId: number; chatName: str
 
         {allMessages.map((m) => {
           const isOwn = m.senderNickname === user?.nickname;
+          const alreadyDeleted = m.isDeleted;
           return (
-            <div key={m.messageId} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[72%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
-                isOwn
-                  ? 'bg-[#5b63d3] text-white rounded-br-sm'
-                  : 'bg-white border border-[#e8e2d9] text-[#2d2926] rounded-bl-sm'
-              }`}>
-                {!isOwn && (
-                  <div className="text-[11px] font-semibold text-[#5b63d3] mb-0.5">@{m.senderNickname}</div>
+            <div key={m.messageId} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}>
+              <div className="relative flex items-end gap-1">
+                {isOwn && !alreadyDeleted && (
+                  <button
+                    onClick={() => handleDeleteMessage(m.messageId)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-[#b0a9a1] hover:text-red-500 bg-transparent border-none cursor-pointer p-1 flex-shrink-0 order-first"
+                    title="Delete message"
+                  >
+                    🗑
+                  </button>
                 )}
-                <div className="text-sm break-words leading-relaxed">
-                  {m.isDeleted
-                    ? <i className={isOwn ? 'opacity-60 text-xs' : 'text-[#b0a9a1] text-xs'}>[message deleted]</i>
-                    : m.imageUrl
-                      ? <img src={m.imageUrl} alt="photo" className="max-w-full rounded-lg max-h-64 object-contain" />
-                      : m.text}
-                </div>
-                <div className={`text-[10px] mt-1 leading-none ${isOwn ? 'text-white/50 text-right' : 'text-[#b0a9a1]'}`}>
-                  {new Date(m.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div className={`max-w-[72%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
+                  isOwn
+                    ? 'bg-[#5b63d3] text-white rounded-br-sm'
+                    : 'bg-white border border-[#e8e2d9] text-[#2d2926] rounded-bl-sm'
+                }`}>
+                  {!isOwn && (
+                    <div className="text-[11px] font-semibold text-[#5b63d3] mb-0.5">@{m.senderNickname}</div>
+                  )}
+                  <div className="text-sm break-words leading-relaxed">
+                    {alreadyDeleted
+                      ? <i className={isOwn ? 'opacity-60 text-xs' : 'text-[#b0a9a1] text-xs'}>[message deleted]</i>
+                      : m.imageUrl
+                        ? <img src={m.imageUrl} alt="photo" className="max-w-full rounded-lg max-h-64 object-contain" />
+                        : m.text}
+                  </div>
+                  <div className={`text-[10px] mt-1 leading-none ${isOwn ? 'text-white/50 text-right' : 'text-[#b0a9a1]'}`}>
+                    {new Date(m.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
               </div>
             </div>

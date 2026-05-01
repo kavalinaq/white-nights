@@ -15,6 +15,7 @@ public record UserProfileResponse(
     UserRole role,
     boolean isPrivate,
     String followStatus, // none, pending, accepted
+    boolean isBlocked,
     long followingCount,
     long followerCount,
     long postCount,

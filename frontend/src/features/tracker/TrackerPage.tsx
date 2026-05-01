@@ -66,7 +66,7 @@ export function TrackerPage() {
     setSelectedDate(null);
   };
 
-  const monthName = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+  const monthName = new Date(year, month, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
   const validEntries = entries?.filter((e) => e.pagesRead !== null && e.pagesRead! > 0) ?? [];
   const totalPages = validEntries.reduce((sum, e) => sum + (e.pagesRead ?? 0), 0);
@@ -74,18 +74,32 @@ export function TrackerPage() {
   const daysLogged = validEntries.length;
 
   return (
-    <div className="px-8 py-6">
-      <h2 className="font-serif text-2xl font-bold text-[#1c1714] mb-5">Reading Tracker</h2>
+    <div className="px-6 py-4">
+      <h2 className="font-serif text-xl font-bold text-[#1c1714] mb-3">Reading Tracker</h2>
 
-      <div className="bg-white rounded-2xl border border-[#e8e2d9] shadow-sm p-5">
-        <div className="flex items-center justify-between mb-5">
-          <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition">‹</button>
-          <h3 className="font-serif font-bold text-[#1c1714] capitalize">{monthName}</h3>
-          <button onClick={nextMonth} disabled={!isBeforeCurrentMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+      <div className="bg-white rounded-2xl border border-[#e8e2d9] shadow-sm p-4">
+        {/* Header: month nav + stats in one row */}
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition flex-shrink-0">‹</button>
+          <h3 className="font-serif font-bold text-[#1c1714] min-w-[9rem] text-center">{monthName}</h3>
+          <button onClick={nextMonth} disabled={!isBeforeCurrentMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0">›</button>
+
+          <div className="ml-auto flex items-center gap-4">
+            {[
+              { label: 'Pages', value: totalPages.toLocaleString() },
+              { label: 'Days', value: daysLogged },
+              { label: 'Best', value: bestDay > 0 ? `${bestDay}p` : '—' },
+            ].map(({ label, value }) => (
+              <div key={label} className="text-center">
+                <div className="font-bold text-sm text-[#5b63d3] leading-tight">{value}</div>
+                <div className="text-[10px] text-[#7a6f68]">{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-7 gap-1 mb-1">
-          {WEEKDAYS.map((d) => <div key={d} className="text-center text-xs font-semibold text-[#7a6f68] py-1">{d}</div>)}
+          {WEEKDAYS.map((d) => <div key={d} className="text-center text-xs font-semibold text-[#7a6f68] py-0.5">{d}</div>)}
         </div>
 
         <div className="grid grid-cols-7 gap-1">
@@ -98,34 +112,20 @@ export function TrackerPage() {
             const isFuture = new Date(year, month, day) > new Date(today.getFullYear(), today.getMonth(), today.getDate());
             return (
               <button key={idx} onClick={() => openDay(day)} disabled={isFuture}
-                className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition
+                className={`h-10 rounded-lg flex flex-col items-center justify-center text-xs transition
                   ${isFuture ? 'bg-[#f8f5f0] text-[#d0c9c1] border border-[#ede8e0] cursor-not-allowed' :
                     hasEntry ? 'bg-[#5b63d3] text-white border border-[#5b63d3] cursor-pointer' :
                     `bg-white text-[#2d2926] border cursor-pointer hover:border-[#5b63d3] ${isToday ? 'border-[#5b63d3] border-2 font-bold' : 'border-[#e8e2d9]'}`}
                 `}
               >
-                <span className={hasEntry ? 'font-bold' : ''}>{day}</span>
+                <span className={hasEntry ? 'font-bold leading-tight' : 'leading-tight'}>{day}</span>
                 {pagesRead !== null && pagesRead !== undefined && (
-                  <span className="text-[10px] leading-tight opacity-90">{pagesRead}p</span>
+                  <span className="text-[9px] leading-none opacity-90">{pagesRead}p</span>
                 )}
               </button>
             );
           })}
         </div>
-      </div>
-
-      {/* Monthly stats */}
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        {[
-          { label: 'Pages read', value: totalPages.toLocaleString() },
-          { label: 'Days logged', value: daysLogged },
-          { label: 'Best day', value: bestDay > 0 ? `${bestDay}p` : '—' },
-        ].map(({ label, value }) => (
-          <div key={label} className="bg-white rounded-xl border border-[#e8e2d9] p-4 text-center">
-            <div className="font-bold text-xl text-[#5b63d3]">{value}</div>
-            <div className="text-xs text-[#7a6f68] mt-0.5">{label}</div>
-          </div>
-        ))}
       </div>
 
       {selectedDate && (

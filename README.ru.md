@@ -167,6 +167,11 @@ Authorization: Bearer <access_token>
 | DELETE | `/api/users/me/avatar` | Удалить аватар |
 | GET | `/api/users/:id/followers` | Список подписчиков |
 | GET | `/api/users/:id/following` | Список подписок |
+| GET | `/api/users/:nickname/online` | Статус онлайн → `{ "online": true/false }` |
+| POST | `/api/users/:nickname/block` | Заблокировать пользователя |
+| DELETE | `/api/users/:nickname/block` | Разблокировать пользователя |
+
+В ответе профиля содержится поле `isBlocked: boolean` — заблокирован ли просматриваемый пользователь текущим пользователем.
 
 **Приватные профили:** посторонние видят только никнейм, аватар и bio.
 
@@ -412,6 +417,7 @@ Content-Type: application/json
 | V13 | Колонка `is_group` в chats + `is_deleted` в messages |
 | V14 | Поддержка вложенных комментариев (ответов) |
 | V15 | Поле `text` в messages стало nullable; добавлена колонка `image_url` |
+| V16 | Таблица `user_blocks` (блокировка пользователей) |
 
 ---
 

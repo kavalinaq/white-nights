@@ -90,7 +90,8 @@ public class ChatController {
     public void deleteMessage(
             @PathVariable Long id,
             @AuthenticationPrincipal String email) {
-        chatService.deleteMessage(id, resolveUser(email));
+        MessageResponse updated = chatService.deleteMessage(id, resolveUser(email));
+        messagingTemplate.convertAndSend("/topic/chat/" + updated.chatId(), updated);
     }
 
     private User resolveUser(String email) {

@@ -136,7 +136,7 @@ frontend/src/
 │       └── *.tsx       — pages and modals
 └── shared/
     ├── api/client.ts   — axios instance (reads access_token from localStorage)
-    └── store/          — Zustand stores (useAuthStore)
+    └── store/          — Zustand stores (useAuthStore, useUnreadStore)
 ```
 
 ---
@@ -180,6 +180,10 @@ Authorization: Bearer <access_token>
 | GET | `/api/users/:id/followers` | Follower list |
 | GET | `/api/users/:id/following` | Following list |
 | GET | `/api/users/:nickname/online` | Online status → `{ "online": true/false }` |
+| POST | `/api/users/:nickname/block` | Block a user |
+| DELETE | `/api/users/:nickname/block` | Unblock a user |
+
+Profile response includes `isBlocked: boolean` (whether the current user has blocked the viewed profile).
 
 **Private profiles:** outsiders see only nickname, avatar, and bio.
 
@@ -425,6 +429,7 @@ Flyway migrations run automatically on startup.
 | V13 | `is_group` in chats + `is_deleted` in messages |
 | V14 | Nested comment replies support |
 | V15 | `text` in messages becomes nullable; `image_url` column added |
+| V16 | `user_blocks` table (user-to-user blocking) |
 
 ---
 

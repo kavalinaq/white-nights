@@ -10,6 +10,21 @@ import { usePosts } from '../post/hooks/usePosts';
 import { PostCard } from '../../shared/components/PostCard';
 import { useCreateChat } from '../chat/hooks/useChats';
 import { ReportModal } from '../moderation/ReportModal';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import client from '../../shared/api/client';
+
+function useBlockUser(nickname: string | undefined) {
+  const queryClient = useQueryClient();
+  const block = useMutation({
+    mutationFn: () => client.post(`/users/${nickname}/block`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', nickname] }),
+  });
+  const unblock = useMutation({
+    mutationFn: () => client.delete(`/users/${nickname}/block`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', nickname] }),
+  });
+  return { block, unblock };
+}
 
 export const ProfilePage = () => {
   const { nickname } = useParams<{ nickname: string }>();
@@ -21,10 +36,12 @@ export const ProfilePage = () => {
   const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
   const [followModal, setFollowModal] = useState<'followers' | 'following' | null>(null);
   const [reportPostId, setReportPostId] = useState<number | null>(null);
+  const [showReportUser, setShowReportUser] = useState(false);
 
   const { follow, unfollow } = useFollow(profile?.userId, profile?.nickname);
   const { data: requests } = useFollowRequests();
   const createChat = useCreateChat();
+  const { block, unblock } = useBlockUser(nickname);
 
   const isSelf = currentUser?.nickname === profile?.nickname;
   const canSeePosts = isSelf || !profile?.isPrivate || profile?.followStatus === 'accepted';
@@ -43,62 +60,85 @@ export const ProfilePage = () => {
   const renderFollowButton = () => {
     if (isSelf) return null;
     if (profile.followStatus === 'accepted')
-      return <button onClick={() => unfollow.mutate()} className="px-5 py-2 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#7a6f68] cursor-pointer hover:border-red-300 hover:text-red-500 transition">Unfollow</button>;
+      return <button onClick={() => unfollow.mutate()} className="px-4 py-1.5 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#7a6f68] cursor-pointer hover:border-red-300 hover:text-red-500 transition">Unfollow</button>;
     if (profile.followStatus === 'pending')
-      return <button disabled className="px-5 py-2 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#7a6f68] opacity-60 cursor-not-allowed">Requested</button>;
-    return <button onClick={() => follow.mutate()} className="px-5 py-2 rounded-full bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-semibold border-none cursor-pointer transition">Follow</button>;
+      return <button disabled className="px-4 py-1.5 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#7a6f68] opacity-60 cursor-not-allowed">Requested</button>;
+    return <button onClick={() => follow.mutate()} className="px-4 py-1.5 rounded-full bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-semibold border-none cursor-pointer transition">Follow</button>;
   };
 
   return (
     <div className="px-8 py-8">
-      {/* Profile header */}
-      <div className="bg-white rounded-2xl border border-[#e8e2d9] shadow-sm p-8 mb-6 text-center">
-        {profile.avatarUrl
-          ? <img src={profile.avatarUrl} alt={profile.nickname} className="w-24 h-24 rounded-full object-cover border-4 border-[#e8e2d9] mx-auto mb-4" />
-          : <div className="w-24 h-24 rounded-full bg-[#e8e2d9] border-4 border-white mx-auto mb-4 flex items-center justify-center text-3xl text-[#7a6f68]">📚</div>
-        }
-
-        <h1 className="font-serif text-xl font-bold text-[#1c1714] mb-1">{profile.nickname}</h1>
-        {profile.bio && <p className="text-sm text-[#7a6f68] mb-4 max-w-xs mx-auto">{profile.bio}</p>}
-
-        {/* Stats */}
-        <div className="flex justify-center gap-8 mb-5">
-          <div className="text-center">
-            <div className="font-bold text-[#1c1714] text-lg">{profile.postCount}</div>
-            <div className="text-xs text-[#7a6f68]">posts</div>
+      {/* Profile header — avatar left 1/3, info right 2/3 */}
+      <div className="bg-white rounded-2xl border border-[#e8e2d9] shadow-sm p-6 mb-6">
+        <div className="flex gap-6">
+          {/* Avatar — 1/3 */}
+          <div className="w-1/3 flex items-center justify-center flex-shrink-0">
+            {profile.avatarUrl
+              ? <img src={profile.avatarUrl} alt={profile.nickname} className="w-28 h-28 rounded-full object-cover border-4 border-[#e8e2d9]" />
+              : <div className="w-28 h-28 rounded-full bg-[#e8e2d9] border-4 border-white flex items-center justify-center text-4xl text-[#7a6f68]">📚</div>
+            }
           </div>
-          <button onClick={() => setFollowModal('followers')} className="text-center bg-transparent border-none cursor-pointer p-0 hover:opacity-70 transition">
-            <div className="font-bold text-[#1c1714] text-lg">{profile.followerCount}</div>
-            <div className="text-xs text-[#7a6f68]">followers</div>
-          </button>
-          <button onClick={() => setFollowModal('following')} className="text-center bg-transparent border-none cursor-pointer p-0 hover:opacity-70 transition">
-            <div className="font-bold text-[#1c1714] text-lg">{profile.followingCount}</div>
-            <div className="text-xs text-[#7a6f68]">following</div>
-          </button>
-        </div>
 
-        {/* Actions */}
-        <div className="flex gap-2 justify-center flex-wrap">
-          {isSelf ? (
-            <>
-              <button onClick={() => setIsEditModalOpen(true)} className="px-5 py-2 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#2d2926] cursor-pointer hover:border-[#5b63d3] hover:text-[#5b63d3] transition">Edit Profile</button>
-              {hasPendingRequests && (
-                <button onClick={() => setIsRequestsModalOpen(true)} className="px-5 py-2 rounded-full bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-semibold border-none cursor-pointer transition">
-                  Requests ({requests.length})
-                </button>
+          {/* Info — 2/3 */}
+          <div className="flex-1 flex flex-col justify-center gap-3">
+            <h1 className="font-serif text-xl font-bold text-[#1c1714]">{profile.nickname}</h1>
+            {profile.bio && <p className="text-sm text-[#7a6f68] max-w-sm">{profile.bio}</p>}
+
+            {/* Stats */}
+            <div className="flex gap-6">
+              <div className="text-center">
+                <div className="font-bold text-[#1c1714]">{profile.postCount}</div>
+                <div className="text-xs text-[#7a6f68]">posts</div>
+              </div>
+              <button onClick={() => setFollowModal('followers')} className="text-center bg-transparent border-none cursor-pointer p-0 hover:opacity-70 transition">
+                <div className="font-bold text-[#1c1714]">{profile.followerCount}</div>
+                <div className="text-xs text-[#7a6f68]">followers</div>
+              </button>
+              <button onClick={() => setFollowModal('following')} className="text-center bg-transparent border-none cursor-pointer p-0 hover:opacity-70 transition">
+                <div className="font-bold text-[#1c1714]">{profile.followingCount}</div>
+                <div className="text-xs text-[#7a6f68]">following</div>
+              </button>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 flex-wrap">
+              {isSelf ? (
+                <>
+                  <button onClick={() => setIsEditModalOpen(true)} className="px-4 py-1.5 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#2d2926] cursor-pointer hover:border-[#5b63d3] hover:text-[#5b63d3] transition">Edit Profile</button>
+                  {hasPendingRequests && (
+                    <button onClick={() => setIsRequestsModalOpen(true)} className="px-4 py-1.5 rounded-full bg-[#5b63d3] hover:bg-[#4951c4] text-white text-sm font-semibold border-none cursor-pointer transition">
+                      Requests ({requests.length})
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {renderFollowButton()}
+                  {currentUser && (
+                    <button onClick={handleMessage} disabled={createChat.isPending}
+                      className="px-4 py-1.5 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#2d2926] cursor-pointer hover:border-[#5b63d3] hover:text-[#5b63d3] transition disabled:opacity-50">
+                      {createChat.isPending ? '…' : 'Message'}
+                    </button>
+                  )}
+                  {currentUser && (
+                    <button
+                      onClick={() => profile.isBlocked ? unblock.mutate() : block.mutate()}
+                      disabled={block.isPending || unblock.isPending}
+                      className="px-4 py-1.5 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#7a6f68] cursor-pointer hover:border-red-300 hover:text-red-500 transition disabled:opacity-50"
+                    >
+                      {profile.isBlocked ? 'Unblock' : 'Block'}
+                    </button>
+                  )}
+                  {currentUser && (
+                    <button onClick={() => setShowReportUser(true)}
+                      className="px-4 py-1.5 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#b0a9a1] cursor-pointer hover:border-red-300 hover:text-red-400 transition">
+                      ⚑ Report
+                    </button>
+                  )}
+                </>
               )}
-            </>
-          ) : (
-            <>
-              {renderFollowButton()}
-              {currentUser && (
-                <button onClick={handleMessage} disabled={createChat.isPending}
-                  className="px-5 py-2 rounded-full border border-[#e8e2d9] bg-white text-sm font-medium text-[#2d2926] cursor-pointer hover:border-[#5b63d3] hover:text-[#5b63d3] transition disabled:opacity-50">
-                  {createChat.isPending ? '…' : 'Message'}
-                </button>
-              )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -133,6 +173,7 @@ export const ProfilePage = () => {
       {isRequestsModalOpen && <FollowRequestsModal onClose={() => setIsRequestsModalOpen(false)} />}
       {followModal && <FollowersModal userId={profile.userId} initialTab={followModal} onClose={() => setFollowModal(null)} />}
       {reportPostId !== null && <ReportModal targetType="post" targetId={reportPostId} onClose={() => setReportPostId(null)} />}
+      {showReportUser && <ReportModal targetType="user" targetId={profile.userId} onClose={() => setShowReportUser(false)} />}
     </div>
   );
 };

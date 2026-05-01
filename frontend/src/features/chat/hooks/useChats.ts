@@ -27,6 +27,8 @@ export function useChats() {
       const res = await client.get<ChatPreview[]>('/chats');
       return res.data;
     },
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 }
 
@@ -54,5 +56,11 @@ export function useDeleteChat() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     },
+  });
+}
+
+export function useDeleteMessage() {
+  return useMutation({
+    mutationFn: (messageId: number) => client.delete(`/messages/${messageId}`),
   });
 }

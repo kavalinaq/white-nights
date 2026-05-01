@@ -93,7 +93,7 @@ public class ChatService {
     }
 
     @Transactional
-    public void deleteMessage(Long messageId, User user) {
+    public MessageResponse deleteMessage(Long messageId, User user) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new NotFoundException("Message not found"));
         if (!message.getSender().getUserId().equals(user.getUserId())) {
@@ -101,6 +101,7 @@ public class ChatService {
         }
         message.setDeleted(true);
         messageRepository.save(message);
+        return toMessageResponse(message);
     }
 
     public MessageResponse saveAndBuildResponse(Long chatId, String text, User sender) {

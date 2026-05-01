@@ -2,11 +2,133 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usePost } from './hooks/usePost';
 import { useInteractions } from './hooks/useInteractions';
-import { useComments } from './hooks/useComments';
+import { useComments, useReplies, type Comment } from './hooks/useComments';
 import { useDeletePost } from './hooks/usePostMutations';
 import { EditPostModal } from './EditPostModal';
 import { useAuthStore } from '../../shared/store/useAuthStore';
 import { Avatar } from '../../shared/components/Avatar';
+
+interface CommentItemProps {
+  comment: Comment;
+  postAuthorNickname: string;
+  currentUser: { nickname: string; role?: string } | null;
+  isAuthenticated: boolean;
+  addComment: { mutateAsync: (p: { text: string; parentCommentId?: number }) => Promise<unknown>; isPending: boolean };
+  deleteComment: { mutate: (p: { commentId: number; parentCommentId?: number | null }) => void };
+}
+
+function CommentItem({ comment, postAuthorNickname, currentUser, isAuthenticated, addComment, deleteComment }: CommentItemProps) {
+  const [showReplies, setShowReplies] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyText, setReplyText] = useState('');
+
+  const { data: replies = [], isLoading: repliesLoading } = useReplies(comment.commentId, showReplies);
+
+  const canDelete = currentUser?.nickname === comment.author.nickname
+    || currentUser?.nickname === postAuthorNickname
+    || currentUser?.role === 'moderator'
+    || currentUser?.role === 'admin';
+
+  const handleReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim()) return;
+    await addComment.mutateAsync({ text: replyText.trim(), parentCommentId: comment.commentId });
+    setReplyText('');
+    setIsReplying(false);
+    setShowReplies(true);
+  };
+
+  return (
+    <div className="bg-[#faf7f2] rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Avatar src={comment.author.avatarUrl} name={comment.author.nickname} size="sm" />
+        <Link to={`/u/${comment.author.nickname}`} className="font-semibold text-sm no-underline text-[#2d2926] hover:text-[#5b63d3] transition-colors">
+          @{comment.author.nickname}
+        </Link>
+        <span className="text-xs text-[#7a6f68]">{new Date(comment.createdAt).toLocaleString()}</span>
+        {canDelete && (
+          <button
+            onClick={() => deleteComment.mutate({ commentId: comment.commentId })}
+            className="ml-auto text-xs text-[#b0a9a1] hover:text-red-400 bg-transparent border-none cursor-pointer transition"
+          >✕</button>
+        )}
+      </div>
+      <p className="text-sm text-[#2d2926] m-0">{comment.text}</p>
+
+      <div className="flex gap-3 mt-2">
+        {isAuthenticated && (
+          <button
+            onClick={() => setIsReplying(v => !v)}
+            className="text-xs text-[#7a6f68] hover:text-[#5b63d3] bg-transparent border-none cursor-pointer transition"
+          >
+            {isReplying ? 'Cancel' : 'Reply'}
+          </button>
+        )}
+        <button
+          onClick={() => setShowReplies(v => !v)}
+          className="text-xs text-[#7a6f68] hover:text-[#5b63d3] bg-transparent border-none cursor-pointer transition"
+        >
+          {showReplies ? 'Hide replies' : 'Show replies'}
+        </button>
+      </div>
+
+      {isReplying && (
+        <form onSubmit={handleReply} className="flex gap-2 mt-2 ml-6">
+          <input
+            value={replyText}
+            onChange={e => setReplyText(e.target.value)}
+            placeholder={`Reply to @${comment.author.nickname}…`}
+            maxLength={2000}
+            autoFocus
+            className="flex-1 px-3 py-1.5 rounded-lg border border-[#e8e2d9] bg-white text-sm focus:outline-none focus:border-[#5b63d3] focus:ring-2 focus:ring-[#5b63d3]/20 transition"
+          />
+          <button
+            type="submit"
+            disabled={addComment.isPending || !replyText.trim()}
+            className="px-3 py-1.5 rounded-lg bg-[#5b63d3] hover:bg-[#4951c4] text-white text-xs font-medium border-none cursor-pointer transition disabled:opacity-50"
+          >
+            Reply
+          </button>
+        </form>
+      )}
+
+      {showReplies && (
+        <div className="mt-3 ml-6 space-y-2">
+          {repliesLoading ? (
+            <p className="text-xs text-[#7a6f68]">Loading…</p>
+          ) : replies.length === 0 ? (
+            <p className="text-xs text-[#7a6f68] italic">No replies yet.</p>
+          ) : (
+            replies.map(reply => {
+              const canDeleteReply = currentUser?.nickname === reply.author.nickname
+                || currentUser?.nickname === postAuthorNickname
+                || currentUser?.role === 'moderator'
+                || currentUser?.role === 'admin';
+              return (
+                <div key={reply.commentId} className="bg-white rounded-xl p-3 border border-[#f3ede4]">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Avatar src={reply.author.avatarUrl} name={reply.author.nickname} size="sm" />
+                    <Link to={`/u/${reply.author.nickname}`} className="font-semibold text-sm no-underline text-[#2d2926] hover:text-[#5b63d3] transition-colors">
+                      @{reply.author.nickname}
+                    </Link>
+                    <span className="text-xs text-[#7a6f68]">{new Date(reply.createdAt).toLocaleString()}</span>
+                    {canDeleteReply && (
+                      <button
+                        onClick={() => deleteComment.mutate({ commentId: reply.commentId, parentCommentId: comment.commentId })}
+                        className="ml-auto text-xs text-[#b0a9a1] hover:text-red-400 bg-transparent border-none cursor-pointer transition"
+                      >✕</button>
+                    )}
+                  </div>
+                  <p className="text-sm text-[#2d2926] m-0">{reply.text}</p>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function PostPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,7 +163,7 @@ export function PostPage() {
   const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-    await addComment.mutateAsync(commentText.trim());
+    await addComment.mutateAsync({ text: commentText.trim() });
     setCommentText('');
   };
 
@@ -125,20 +247,15 @@ export function PostPage() {
 
             <div className="space-y-3">
               {comments.map((c) => (
-                <div key={c.commentId} className="bg-[#faf7f2] rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Avatar src={c.author.avatarUrl} name={c.author.nickname} size="sm" />
-                    <Link to={`/u/${c.author.nickname}`} className="font-semibold text-sm no-underline text-[#2d2926] hover:text-[#5b63d3] transition-colors">
-                      @{c.author.nickname}
-                    </Link>
-                    <span className="text-xs text-[#7a6f68]">{new Date(c.createdAt).toLocaleString()}</span>
-                    {(user?.nickname === c.author.nickname || user?.role === 'moderator' || user?.role === 'admin') && (
-                      <button onClick={() => deleteComment.mutate(c.commentId)}
-                        className="ml-auto text-xs text-[#b0a9a1] hover:text-red-400 bg-transparent border-none cursor-pointer transition">✕</button>
-                    )}
-                  </div>
-                  <p className="text-sm text-[#2d2926] m-0">{c.text}</p>
-                </div>
+                <CommentItem
+                  key={c.commentId}
+                  comment={c}
+                  postAuthorNickname={post.authorInfo.nickname}
+                  currentUser={user}
+                  isAuthenticated={isAuthenticated}
+                  addComment={addComment}
+                  deleteComment={deleteComment}
+                />
               ))}
             </div>
 

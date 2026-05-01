@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -47,13 +48,13 @@ class FollowIT {
     @Autowired
     private com.whitenights.common.ratelimit.RateLimitingService rateLimitingService;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setUp() {
         rateLimitingService.clearBuckets();
-        followRepository.deleteAll();
-        refreshTokenRepository.deleteAll();
-        tokenRepository.deleteAll();
-        userRepository.deleteAll();
+        jdbcTemplate.execute("TRUNCATE \"users\" CASCADE");
     }
 
     private String getAccessToken(String email, String password, String nickname) throws Exception {

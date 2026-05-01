@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate, Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useChats } from './features/chat/hooks/useChats';
+import { useUnreadStore, isUnread } from './shared/store/useUnreadStore';
 import { useAuthStore } from './shared/store/useAuthStore';
 import { LoginPage } from './features/auth/LoginPage';
 import { RegisterPage } from './features/auth/RegisterPage';
@@ -61,6 +63,13 @@ function TopBar() {
 
 function SideNav() {
   const { user } = useAuthStore();
+  const { data: chats } = useChats();
+  const { lastSeenAt } = useUnreadStore();
+
+  const unreadCount = user
+    ? (chats ?? []).filter((c) => isUnread(c.lastMessage, c.chatId, user.nickname, lastSeenAt)).length
+    : 0;
+
   const cls = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
       isActive
@@ -76,7 +85,14 @@ function SideNav() {
         <>
           <NavLink to={`/u/${user.nickname}/shelves`} className={cls}>📚 Shelves</NavLink>
           <NavLink to="/tracker" className={cls}>📅 Tracker</NavLink>
-          <NavLink to="/chat" className={cls}>💬 Chat</NavLink>
+          <NavLink to="/chat" className={cls}>
+            <span>💬 Chat</span>
+            {unreadCount > 0 && (
+              <span className="ml-auto min-w-[18px] h-[18px] rounded-full bg-[#5b63d3] text-white text-[10px] font-bold flex items-center justify-center px-1">
+                {unreadCount}
+              </span>
+            )}
+          </NavLink>
           {(user.role === 'moderator' || user.role === 'admin') && (
             <NavLink to="/moderation" className={cls}>🛡️ Moderation</NavLink>
           )}
