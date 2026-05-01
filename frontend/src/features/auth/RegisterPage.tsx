@@ -60,7 +60,7 @@ export const RegisterPage = () => {
           </button>
           {mutation.isError && (
             <p className="text-red-500 text-sm text-center">
-              {(mutation.error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Registration failed'}
+              {(mutation.error as any).response?.data?.message || 'Registration failed'}
             </p>
           )}
         </form>

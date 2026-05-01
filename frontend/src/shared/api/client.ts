@@ -17,7 +17,9 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
   (res) => res,
   async (error) => {
-    if (error.response?.status === 401 && !error.config._retry) {
+    const isAuthRequest = error.config.url?.includes('/auth/login') || error.config.url?.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !error.config._retry && !isAuthRequest) {
       error.config._retry = true;
       try {
         await useAuthStore.getState().checkAuth();

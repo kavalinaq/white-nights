@@ -45,7 +45,7 @@ export const LoginPage = () => {
           </button>
           {mutation.isError && (
             <p className="text-red-500 text-sm text-center">
-              {(mutation.error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Login failed'}
+              {(mutation.error as any).response?.data?.message || 'Login failed'}
             </p>
           )}
         </form>
