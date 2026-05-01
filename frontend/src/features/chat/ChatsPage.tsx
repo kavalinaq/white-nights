@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useChats, useCreateChat, useDeleteChat, type ChatMessage, type ChatPreview } from './hooks/useChats';
 import { useMessages } from './hooks/useMessages';
 import { useChatSocket } from './hooks/useChatSocket';
@@ -35,7 +36,7 @@ export function ChatsPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-56px)] max-w-5xl mx-auto border-x border-[#e8e2d9]">
+    <div className="flex h-full border-r border-[#e8e2d9]">
       {/* Sidebar */}
       <aside className={`w-72 flex-shrink-0 border-r border-[#e8e2d9] bg-white flex flex-col ${activeId ? 'hidden sm:flex' : 'flex'}`}>
         <div className="px-4 py-3 border-b border-[#e8e2d9] flex items-center justify-between">
@@ -94,7 +95,12 @@ export function ChatsPage() {
       {/* Main area */}
       <section className="flex-1 flex flex-col bg-[#faf7f2] min-w-0">
         {activeId ? (
-          <ChatView key={activeId} chatId={activeId} chatName={activeChat?.name ?? `Chat ${activeId}`} />
+          <ChatView
+            key={activeId}
+            chatId={activeId}
+            chatName={activeChat?.name ?? `Chat ${activeId}`}
+            isGroup={activeChat?.isGroup ?? true}
+          />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-[#7a6f68] gap-3">
             <span className="text-5xl">💬</span>
@@ -109,7 +115,7 @@ export function ChatsPage() {
 
 function ChatListItem({ chat, isActive, onClick }: { chat: ChatPreview; isActive: boolean; onClick: () => void }) {
   const lastText = chat.lastMessage
-    ? (chat.lastMessage.isDeleted ? '[deleted]' : chat.lastMessage.text)
+    ? (chat.lastMessage.isDeleted ? '[deleted]' : (chat.lastMessage.text ?? (chat.lastMessage.imageUrl ? '📷 Photo' : '')))
     : null;
 
   const initials = (chat.name ?? '?').slice(0, 2).toUpperCase();
@@ -139,12 +145,14 @@ function ChatListItem({ chat, isActive, onClick }: { chat: ChatPreview; isActive
   );
 }
 
-function ChatView({ chatId, chatName }: { chatId: number; chatName: string }) {
+function ChatView({ chatId, chatName, isGroup }: { chatId: number; chatName: string; isGroup: boolean }) {
   const { items: history, hasMore, loadMore, isFetching } = useMessages(chatId);
   const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const deleteChat = useDeleteChat();
@@ -152,6 +160,14 @@ function ChatView({ chatId, chatName }: { chatId: number; chatName: string }) {
   const { connected, sendMessage } = useChatSocket(chatId, (msg) => {
     setLiveMessages((prev) => [...prev, msg]);
   });
+
+  const { data: presenceData } = useQuery({
+    queryKey: ['presence', chatName],
+    queryFn: () => client.get<{ online: boolean }>(`/users/${chatName}/online`).then((r) => r.data),
+    enabled: !isGroup && !!chatName,
+    refetchInterval: 30000,
+  });
+  const isPeerOnline = presenceData?.online ?? false;
 
   const allMessages = [...history].reverse().concat(liveMessages);
 
@@ -169,6 +185,24 @@ function ChatView({ chatId, chatName }: { chatId: number; chatName: string }) {
     if (!trimmed) return;
     sendMessage(trimmed);
     setText('');
+  };
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await client.post(`/chats/${chatId}/upload-image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    } catch {
+      // image will not appear; WS broadcast handles display
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -191,10 +225,19 @@ function ChatView({ chatId, chatName }: { chatId: number; chatName: string }) {
           {chatName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm text-[#1c1714] truncate">{chatName}</div>
-          <div className={`text-xs ${connected ? 'text-green-500' : 'text-[#b0a9a1]'}`}>
-            {connected ? 'Online' : 'Connecting…'}
-          </div>
+          {!isGroup ? (
+            <Link to={`/u/${chatName}`} className="font-semibold text-sm text-[#1c1714] hover:text-[#5b63d3] transition truncate block">
+              {chatName}
+            </Link>
+          ) : (
+            <div className="font-semibold text-sm text-[#1c1714] truncate">{chatName}</div>
+          )}
+          {!isGroup && (
+            <div className="flex items-center gap-1">
+              <span className={`w-1.5 h-1.5 rounded-full ${isPeerOnline ? 'bg-green-500' : 'bg-[#d0c9c1]'}`} />
+              <span className="text-xs text-[#b0a9a1]">{isPeerOnline ? 'Online' : 'Offline'}</span>
+            </div>
+          )}
         </div>
         <button
           onClick={handleDelete}
@@ -237,7 +280,9 @@ function ChatView({ chatId, chatName }: { chatId: number; chatName: string }) {
                 <div className="text-sm break-words leading-relaxed">
                   {m.isDeleted
                     ? <i className={isOwn ? 'opacity-60 text-xs' : 'text-[#b0a9a1] text-xs'}>[message deleted]</i>
-                    : m.text}
+                    : m.imageUrl
+                      ? <img src={m.imageUrl} alt="photo" className="max-w-full rounded-lg max-h-64 object-contain" />
+                      : m.text}
                 </div>
                 <div className={`text-[10px] mt-1 leading-none ${isOwn ? 'text-white/50 text-right' : 'text-[#b0a9a1]'}`}>
                   {new Date(m.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -251,6 +296,22 @@ function ChatView({ chatId, chatName }: { chatId: number; chatName: string }) {
 
       {/* Input */}
       <form onSubmit={handleSend} className="p-3 bg-white border-t border-[#e8e2d9] flex gap-2 items-center">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageSelect}
+        />
+        <button
+          type="button"
+          disabled={!connected || uploadingImage}
+          onClick={() => fileInputRef.current?.click()}
+          className="w-10 h-10 rounded-full border border-[#e8e2d9] bg-white text-[#7a6f68] hover:border-[#5b63d3] hover:text-[#5b63d3] flex items-center justify-center cursor-pointer transition disabled:opacity-40 flex-shrink-0 text-base"
+          title="Send photo"
+        >
+          {uploadingImage ? '…' : '📷'}
+        </button>
         <input
           ref={inputRef}
           value={text}

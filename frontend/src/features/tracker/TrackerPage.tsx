@@ -35,11 +35,19 @@ export function TrackerPage() {
   for (let i = 0; i < offset; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
+  const isBeforeCurrentMonth = year < today.getFullYear() || (year === today.getFullYear() && month < today.getMonth());
+
   const prevMonth = () => { if (month === 0) { setMonth(11); setYear(year - 1); } else setMonth(month - 1); };
-  const nextMonth = () => { if (month === 11) { setMonth(0); setYear(year + 1); } else setMonth(month + 1); };
+  const nextMonth = () => {
+    if (!isBeforeCurrentMonth) return;
+    if (month === 11) { setMonth(0); setYear(year + 1); } else setMonth(month + 1);
+  };
 
   const openDay = (day: number) => {
     const date = formatDate(year, month, day);
+    const dateObj = new Date(year, month, day);
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (dateObj > todayStart) return;
     setSelectedDate(date);
     const existing = entryByDate[date];
     setPagesInput(existing !== undefined && existing !== null ? String(existing) : '');
@@ -66,14 +74,14 @@ export function TrackerPage() {
   const daysLogged = validEntries.length;
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
+    <div className="px-8 py-6">
       <h2 className="font-serif text-2xl font-bold text-[#1c1714] mb-5">Reading Tracker</h2>
 
       <div className="bg-white rounded-2xl border border-[#e8e2d9] shadow-sm p-5">
         <div className="flex items-center justify-between mb-5">
           <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition">‹</button>
           <h3 className="font-serif font-bold text-[#1c1714] capitalize">{monthName}</h3>
-          <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition">›</button>
+          <button onClick={nextMonth} disabled={!isBeforeCurrentMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition disabled:opacity-30 disabled:cursor-not-allowed">›</button>
         </div>
 
         <div className="grid grid-cols-7 gap-1 mb-1">
@@ -87,10 +95,13 @@ export function TrackerPage() {
             const hasEntry = date in entryByDate;
             const pagesRead = entryByDate[date];
             const isToday = date === formatDate(today.getFullYear(), today.getMonth(), today.getDate());
+            const isFuture = new Date(year, month, day) > new Date(today.getFullYear(), today.getMonth(), today.getDate());
             return (
-              <button key={idx} onClick={() => openDay(day)}
-                className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs cursor-pointer transition
-                  ${hasEntry ? 'bg-[#5b63d3] text-white border border-[#5b63d3]' : `bg-white text-[#2d2926] border hover:border-[#5b63d3] ${isToday ? 'border-[#5b63d3] border-2 font-bold' : 'border-[#e8e2d9]'}`}
+              <button key={idx} onClick={() => openDay(day)} disabled={isFuture}
+                className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition
+                  ${isFuture ? 'bg-[#f8f5f0] text-[#d0c9c1] border border-[#ede8e0] cursor-not-allowed' :
+                    hasEntry ? 'bg-[#5b63d3] text-white border border-[#5b63d3] cursor-pointer' :
+                    `bg-white text-[#2d2926] border cursor-pointer hover:border-[#5b63d3] ${isToday ? 'border-[#5b63d3] border-2 font-bold' : 'border-[#e8e2d9]'}`}
                 `}
               >
                 <span className={hasEntry ? 'font-bold' : ''}>{day}</span>

@@ -13,12 +13,16 @@ import com.whitenights.chat.repository.ChatRepository;
 import com.whitenights.chat.repository.MessageRepository;
 import com.whitenights.common.exception.types.ForbiddenException;
 import com.whitenights.common.exception.types.NotFoundException;
+import com.whitenights.common.storage.StorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +32,10 @@ public class ChatService {
     private final ChatMemberRepository chatMemberRepository;
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final StorageService storageService;
+
+    @Value("${minio.chat-bucket}")
+    private String chatBucket;
 
     @Transactional(readOnly = true)
     public List<ChatResponse> getChats(User user) {
@@ -102,6 +110,24 @@ public class ChatService {
                 .chat(chat)
                 .sender(sender)
                 .text(text)
+                .build());
+        return toMessageResponse(message);
+    }
+
+    @Transactional
+    public MessageResponse saveImageMessage(Long chatId, MultipartFile file, User sender) {
+        Chat chat = requireChat(chatId);
+        requireMember(chatId, sender);
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new RuntimeException("Only image files are allowed");
+        }
+        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String imageUrl = storageService.uploadFile(chatBucket, filename, file);
+        Message message = messageRepository.save(Message.builder()
+                .chat(chat)
+                .sender(sender)
+                .imageUrl(imageUrl)
                 .build());
         return toMessageResponse(message);
     }
@@ -182,6 +208,7 @@ public class ChatService {
                 m.getSender() != null ? m.getSender().getUserId() : null,
                 m.getSender() != null ? m.getSender().getNickname() : null,
                 m.isDeleted() ? null : m.getText(),
+                m.isDeleted() ? null : m.getImageUrl(),
                 m.isDeleted(),
                 m.getSentAt()
         );

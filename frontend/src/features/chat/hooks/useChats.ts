@@ -14,7 +14,8 @@ export interface ChatMessage {
   chatId: number;
   senderId: number;
   senderNickname: string;
-  text: string;
+  text: string | null;
+  imageUrl: string | null;
   isDeleted: boolean;
   sentAt: string;
 }

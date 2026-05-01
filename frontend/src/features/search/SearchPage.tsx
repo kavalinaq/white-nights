@@ -26,7 +26,7 @@ export function SearchPage() {
   const hasResults = data && (data.users.length > 0 || data.posts.length > 0 || data.tags.length > 0);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="px-8 py-6">
       <h2 className="font-serif text-2xl font-bold text-[#1c1714] mb-4">Search</h2>
 
       <div className="relative mb-6">

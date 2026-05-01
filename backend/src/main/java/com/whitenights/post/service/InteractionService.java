@@ -2,6 +2,7 @@ package com.whitenights.post.service;
 
 import com.whitenights.auth.domain.User;
 import com.whitenights.auth.domain.UserRole;
+import com.whitenights.common.exception.types.ForbiddenException;
 import com.whitenights.post.api.dto.CommentResponse;
 import com.whitenights.post.domain.*;
 import com.whitenights.common.exception.types.NotFoundException;
@@ -81,9 +82,21 @@ public class InteractionService {
     }
 
     @Transactional
-    public CommentResponse addComment(Long postId, String text, User user) {
+    public CommentResponse addComment(Long postId, String text, Long parentCommentId, User user) {
         Post post = requirePost(postId);
-        Comment comment = Comment.builder().post(post).user(user).text(text).build();
+        if (parentCommentId != null) {
+            Comment parent = commentRepository.findById(parentCommentId)
+                    .orElseThrow(() -> new NotFoundException("Parent comment not found"));
+            if (!parent.getPost().getPostId().equals(postId)) {
+                throw new ForbiddenException("Parent comment does not belong to this post");
+            }
+        }
+        Comment comment = Comment.builder()
+                .post(post)
+                .user(user)
+                .text(text)
+                .parentCommentId(parentCommentId)
+                .build();
         return toCommentResponse(commentRepository.save(comment));
     }
 
@@ -92,11 +105,12 @@ public class InteractionService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment not found"));
 
-        boolean isAuthor = comment.getUser().getUserId().equals(user.getUserId());
+        boolean isCommentAuthor = comment.getUser().getUserId().equals(user.getUserId());
+        boolean isPostOwner = comment.getPost().getUser().getUserId().equals(user.getUserId());
         boolean isModerator = user.getRole() == UserRole.moderator || user.getRole() == UserRole.admin;
 
-        if (!isAuthor && !isModerator) {
-            throw new RuntimeException("Access denied");
+        if (!isCommentAuthor && !isPostOwner && !isModerator) {
+            throw new ForbiddenException("Access denied");
         }
 
         commentRepository.delete(comment);
@@ -104,6 +118,16 @@ public class InteractionService {
 
     public List<CommentResponse> getComments(Long postId, Long cursor, int limit) {
         return commentRepository.findByPostIdWithCursor(postId, cursor, PageRequest.of(0, Math.min(limit, 50)))
+                .stream()
+                .map(this::toCommentResponse)
+                .toList();
+    }
+
+    public List<CommentResponse> getReplies(Long parentCommentId, Long cursor, int limit) {
+        if (!commentRepository.existsById(parentCommentId)) {
+            throw new NotFoundException("Comment not found");
+        }
+        return commentRepository.findByParentIdWithCursor(parentCommentId, cursor, PageRequest.of(0, Math.min(limit, 50)))
                 .stream()
                 .map(this::toCommentResponse)
                 .toList();
@@ -124,6 +148,7 @@ public class InteractionService {
     private CommentResponse toCommentResponse(Comment c) {
         return new CommentResponse(
                 c.getCommentId(),
+                c.getParentCommentId(),
                 c.getText(),
                 c.getCreatedAt(),
                 new CommentResponse.AuthorInfo(

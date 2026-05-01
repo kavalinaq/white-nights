@@ -27,8 +27,8 @@ export function PostPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
 
-  if (isLoading) return <div className="max-w-2xl mx-auto px-4 py-8 text-center text-[#7a6f68]">Loading…</div>;
-  if (!post) return <div className="max-w-2xl mx-auto px-4 py-8 text-center text-[#7a6f68]">Post not found.</div>;
+  if (isLoading) return <div className="px-8 py-8 text-center text-[#7a6f68]">Loading…</div>;
+  if (!post) return <div className="px-8 py-8 text-center text-[#7a6f68]">Post not found.</div>;
 
   const isMine = user?.nickname === post.authorInfo.nickname;
 
@@ -46,7 +46,7 @@ export function PostPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="px-8 py-6">
       <Link to="/" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">← Back to feed</Link>
 
       <article className="mt-4 bg-white rounded-2xl border border-[#e8e2d9] shadow-sm overflow-hidden">

@@ -2,6 +2,7 @@ package com.whitenights.user.api;
 
 import com.whitenights.auth.domain.User;
 import com.whitenights.auth.repository.UserRepository;
+import com.whitenights.chat.service.PresenceService;
 import com.whitenights.user.api.dto.UpdateProfileRequest;
 import com.whitenights.user.api.dto.UserProfileResponse;
 import com.whitenights.user.service.ProfileService;
@@ -20,6 +21,7 @@ public class ProfileController {
 
     private final ProfileService profileService;
     private final UserRepository userRepository;
+    private final PresenceService presenceService;
 
     @GetMapping("/me")
     public UserProfileResponse getMyProfile(@AuthenticationPrincipal String email) {
@@ -54,6 +56,13 @@ public class ProfileController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         String url = profileService.uploadAvatar(file, user);
         return Map.of("avatarUrl", url);
+    }
+
+    @GetMapping("/{nickname}/online")
+    public Map<String, Boolean> isOnline(@PathVariable String nickname) {
+        return userRepository.findByNickname(nickname)
+                .map(u -> Map.of("online", presenceService.isOnline(u.getUserId())))
+                .orElse(Map.of("online", false));
     }
 
     @DeleteMapping("/me/avatar")

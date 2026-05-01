@@ -64,7 +64,15 @@ public class InteractionController {
             @PathVariable Long id,
             @RequestBody @Valid CreateCommentRequest request,
             @AuthenticationPrincipal String email) {
-        return interactionService.addComment(id, request.text(), resolveUser(email));
+        return interactionService.addComment(id, request.text(), request.parentCommentId(), resolveUser(email));
+    }
+
+    @GetMapping("/api/comments/{id}/replies")
+    public List<CommentResponse> getReplies(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        return interactionService.getReplies(id, cursor, limit);
     }
 
     @DeleteMapping("/api/comments/{id}")

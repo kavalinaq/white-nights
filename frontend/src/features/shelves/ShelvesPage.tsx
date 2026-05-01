@@ -29,11 +29,11 @@ export function ShelvesPage() {
     setTitle(''); setAuthor(''); setAddingTo(null);
   };
 
-  if (profileLoading || isLoading) return <div className="max-w-2xl mx-auto px-4 py-12 text-center text-[#7a6f68]">Loading…</div>;
-  if (!profile) return <div className="max-w-2xl mx-auto px-4 py-12 text-center text-[#7a6f68]">User not found.</div>;
+  if (profileLoading || isLoading) return <div className="px-8 py-12 text-center text-[#7a6f68]">Loading…</div>;
+  if (!profile) return <div className="px-8 py-12 text-center text-[#7a6f68]">User not found.</div>;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="px-8 py-6">
       <Link to={`/u/${nickname}`} className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">← @{nickname}</Link>
       <h2 className="font-serif text-2xl font-bold text-[#1c1714] mt-3 mb-6">📚 Bookshelves</h2>
 

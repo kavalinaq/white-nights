@@ -11,7 +11,7 @@ export function TagPage() {
   const [reportPostId, setReportPostId] = useState<number | null>(null);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="px-8 py-6">
       <Link to="/search" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">← Search</Link>
       <h2 className="font-serif text-2xl font-bold text-[#1c1714] mt-3 mb-6">#{tagName}</h2>
 

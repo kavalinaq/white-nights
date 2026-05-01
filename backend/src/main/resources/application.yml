@@ -41,6 +41,7 @@ minio:
   secret-key: minioadmin
   bucket: avatars
   posts-bucket: posts
+  chat-bucket: chat
 
 support:
   email: support@whitenights.local

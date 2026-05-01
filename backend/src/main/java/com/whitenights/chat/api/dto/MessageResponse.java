@@ -8,6 +8,7 @@ public record MessageResponse(
         Long senderId,
         String senderNickname,
         String text,
+        String imageUrl,
         boolean isDeleted,
         LocalDateTime sentAt
 ) {}

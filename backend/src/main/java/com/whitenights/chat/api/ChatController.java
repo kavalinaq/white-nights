@@ -10,8 +10,10 @@ import com.whitenights.chat.service.ChatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -21,6 +23,7 @@ public class ChatController {
 
     private final ChatService chatService;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @GetMapping("/api/chats")
     public List<ChatResponse> getChats(@AuthenticationPrincipal String email) {
@@ -68,6 +71,18 @@ public class ChatController {
             @PathVariable Long userId,
             @AuthenticationPrincipal String email) {
         chatService.removeMember(id, userId, resolveUser(email));
+    }
+
+    @PostMapping("/api/chats/{id}/upload-image")
+    @ResponseStatus(HttpStatus.CREATED)
+    public MessageResponse uploadImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal String email) {
+        User user = resolveUser(email);
+        MessageResponse response = chatService.saveImageMessage(id, file, user);
+        messagingTemplate.convertAndSend("/topic/chat/" + id, response);
+        return response;
     }
 
     @DeleteMapping("/api/messages/{id}")

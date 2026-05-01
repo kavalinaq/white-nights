@@ -58,17 +58,15 @@ docker compose up -d
 
 ### 2. Настройка MinIO
 
-Откройте консоль MinIO по адресу <http://localhost:9001> (логин: `minioadmin` / пароль: `minioadmin`) и создайте два бакета:
-- `avatars` — для аватаров пользователей
-- `posts` — для изображений к постам
-
-Или через CLI (если установлен `mc`):
+Бакеты MinIO создаются **автоматически** при первой загрузке файла — ничего настраивать вручную не нужно. Если хотите создать их заранее через CLI (если установлен `mc`):
 ```bash
 mc alias set local http://localhost:9000 minioadmin minioadmin
 mc mb local/avatars
 mc mb local/posts
+mc mb local/chat
 mc anonymous set public local/avatars
 mc anonymous set public local/posts
+mc anonymous set public local/chat
 ```
 
 ### 3. Запуск бэкенда
@@ -288,6 +286,7 @@ Authorization: Bearer <access_token>
 | GET | `/api/chats` | Список чатов с превью последнего сообщения |
 | POST | `/api/chats` | Создать чат: `{ peerId }` (1:1) или `{ name, memberIds[] }` (группа) |
 | GET | `/api/chats/:id/messages?cursor=&limit=` | История сообщений |
+| POST | `/api/chats/:id/upload-image` | Отправить изображение (multipart `file`); загружает в MinIO и рассылает через WebSocket |
 | POST | `/api/chats/:id/members` | Добавить участника `{ userId }` (только владелец группы) |
 | DELETE | `/api/chats/:id/members/:userId` | Удалить участника (только владелец) |
 | DELETE | `/api/messages/:id` | Удалить своё сообщение (мягкое удаление) |
@@ -369,9 +368,13 @@ Content-Type: application/json
 /topic/chat/{chatId}
 ```
 
+Сообщения с изображениями доставляются туда же (через `POST /api/chats/:id/upload-image`).
+
 ### Присутствие
 
-Онлайн-статус отслеживается в памяти сервера. При подключении/отключении пользователь добавляется/убирается из in-memory множества.
+Онлайн-статус отслеживается в памяти сервера (`PresenceService`). При STOMP-подключении/отключении пользователь добавляется/убирается из in-memory множества через `PresenceEventListener`.
+
+Проверить онлайн-статус: `GET /api/users/:nickname/online` → `{ "online": true/false }`
 
 ---
 
@@ -407,6 +410,8 @@ Content-Type: application/json
 | V11 | Расширение `pg_trgm` + GIN-индексы + `search_vector` в posts |
 | V12 | Колонка `comment` в moderation_actions |
 | V13 | Колонка `is_group` в chats + `is_deleted` в messages |
+| V14 | Поддержка вложенных комментариев (ответов) |
+| V15 | Поле `text` в messages стало nullable; добавлена колонка `image_url` |
 
 ---
 
@@ -418,8 +423,9 @@ MinIO используется как S3-совместимое хранилищ
 |---|---|
 | `avatars` | Аватары пользователей |
 | `posts` | Изображения к постам |
+| `chat` | Изображения, отправленные в чатах |
 
-Файлы принимаются только с `Content-Type: image/*`.
+Файлы принимаются только с `Content-Type: image/*`. Все бакеты создаются автоматически при первой загрузке.
 
 ---
 
@@ -450,6 +456,7 @@ MinIO используется как S3-совместимое хранилищ
 | `minio.secret-key` | `minioadmin` | MinIO secret key |
 | `minio.bucket` | `avatars` | Бакет аватаров |
 | `minio.posts-bucket` | `posts` | Бакет изображений постов |
+| `minio.chat-bucket` | `chat` | Бакет изображений чата |
 | `support.email` | `support@whitenights.local` | Адрес поддержки |
 
 ---

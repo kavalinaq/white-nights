@@ -31,9 +31,9 @@ export const ProfilePage = () => {
   const { items: posts, hasMore, loadMore, isFetching } = usePosts(canSeePosts ? profile?.userId : undefined);
   const hasPendingRequests = isSelf && requests && requests.length > 0;
 
-  if (isLoading) return <div className="max-w-2xl mx-auto px-4 py-12 text-center text-[#7a6f68]">Loading…</div>;
-  if (error) return <div className="max-w-2xl mx-auto px-4 py-12 text-center text-red-500">Error loading profile</div>;
-  if (!profile) return <div className="max-w-2xl mx-auto px-4 py-12 text-center text-[#7a6f68]">User not found</div>;
+  if (isLoading) return <div className="px-8 py-12 text-center text-[#7a6f68]">Loading…</div>;
+  if (error) return <div className="px-8 py-12 text-center text-red-500">Error loading profile</div>;
+  if (!profile) return <div className="px-8 py-12 text-center text-[#7a6f68]">User not found</div>;
 
   const handleMessage = async () => {
     const result = await createChat.mutateAsync({ peerId: profile.userId });
@@ -50,7 +50,7 @@ export const ProfilePage = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="px-8 py-8">
       {/* Profile header */}
       <div className="bg-white rounded-2xl border border-[#e8e2d9] shadow-sm p-8 mb-6 text-center">
         {profile.avatarUrl

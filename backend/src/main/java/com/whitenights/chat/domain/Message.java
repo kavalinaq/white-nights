@@ -28,8 +28,11 @@ public class Message {
     @JoinColumn(name = "sender_id")
     private User sender;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String text;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Column(nullable = false)
     @Builder.Default

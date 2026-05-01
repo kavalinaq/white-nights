@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './shared/store/useAuthStore';
 import { LoginPage } from './features/auth/LoginPage';
 import { RegisterPage } from './features/auth/RegisterPage';
@@ -17,49 +17,99 @@ import { SettingsPage } from './features/settings/SettingsPage';
 import { ChatsPage } from './features/chat/ChatsPage';
 import { ModerationPage } from './features/moderation/ModerationPage';
 
-function NavBar() {
+function TopBar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
   return (
-    <nav className="bg-white border-b border-[#e8e2d9] shadow-sm sticky top-0 z-50">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6">
-        <Link to="/" className="font-serif font-bold text-[#5b63d3] text-lg tracking-tight">
-          📖 White Nights
-        </Link>
-        <Link to="/" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Feed</Link>
-        <Link to="/search" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Search</Link>
-        {user && (
+    <header className="h-14 bg-white border-b border-[#e8e2d9] shadow-sm flex items-center px-6 gap-4 flex-shrink-0 z-50">
+      <span className="font-serif font-bold text-[#5b63d3] text-xl tracking-tight">📖 White Nights</span>
+      <div className="ml-auto flex items-center gap-5">
+        {user ? (
           <>
-            <Link to={`/u/${user.nickname}/shelves`} className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Shelves</Link>
-            <Link to="/tracker" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Tracker</Link>
-            <Link to="/chat" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Chat</Link>
-            {(user.role === 'moderator' || user.role === 'admin') && (
-              <Link to="/moderation" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Moderation</Link>
-            )}
+            <Link
+              to={`/u/${user.nickname}`}
+              className="text-sm font-semibold text-[#2d2926] hover:text-[#5b63d3] transition-colors"
+            >
+              @{user.nickname}
+            </Link>
+            <Link to="/settings" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">
+              Settings
+            </Link>
+            <button
+              onClick={() => { logout(); navigate('/login'); }}
+              className="text-sm text-[#7a6f68] hover:text-[#5b63d3] bg-transparent border-none cursor-pointer p-0 transition-colors"
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Login</Link>
+            <Link
+              to="/register"
+              className="text-sm bg-[#5b63d3] text-white px-4 py-1.5 rounded-lg hover:bg-[#4951c4] transition-colors font-medium"
+            >
+              Join
+            </Link>
           </>
         )}
-        <div className="ml-auto flex items-center gap-4">
-          {user ? (
-            <>
-              <Link to={`/u/${user.nickname}`} className="text-sm font-medium text-[#2d2926] hover:text-[#5b63d3] transition-colors">@{user.nickname}</Link>
-              <Link to="/settings" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Settings</Link>
-              <button
-                onClick={() => { logout(); navigate('/login'); }}
-                className="text-sm text-[#7a6f68] hover:text-[#5b63d3] bg-transparent border-none cursor-pointer p-0 transition-colors"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Login</Link>
-              <Link to="/register" className="text-sm bg-[#5b63d3] text-white px-3 py-1.5 rounded-lg hover:bg-[#4951c4] transition-colors">Join</Link>
-            </>
-          )}
-        </div>
       </div>
-    </nav>
+    </header>
+  );
+}
+
+function SideNav() {
+  const { user } = useAuthStore();
+  const cls = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+      isActive
+        ? 'bg-[#eef0ff] text-[#5b63d3]'
+        : 'text-[#7a6f68] hover:bg-[#f4f1ec] hover:text-[#2d2926]'
+    }`;
+
+  return (
+    <aside className="w-56 flex-shrink-0 border-r border-[#e8e2d9] bg-white px-3 py-5 flex flex-col gap-1 overflow-y-auto">
+      <NavLink to="/" end className={cls}>📰 Feed</NavLink>
+      <NavLink to="/search" className={cls}>🔍 Search</NavLink>
+      {user && (
+        <>
+          <NavLink to={`/u/${user.nickname}/shelves`} className={cls}>📚 Shelves</NavLink>
+          <NavLink to="/tracker" className={cls}>📅 Tracker</NavLink>
+          <NavLink to="/chat" className={cls}>💬 Chat</NavLink>
+          {(user.role === 'moderator' || user.role === 'admin') && (
+            <NavLink to="/moderation" className={cls}>🛡️ Moderation</NavLink>
+          )}
+        </>
+      )}
+    </aside>
+  );
+}
+
+function AppShell() {
+  return (
+    <div className="flex flex-col h-screen bg-[#faf8f5]">
+      <TopBar />
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        <SideNav />
+        <main className="flex-1 overflow-y-auto min-h-0">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function AuthShell() {
+  return (
+    <div className="min-h-screen bg-[#faf8f5] flex flex-col">
+      <header className="h-14 bg-white border-b border-[#e8e2d9] flex items-center px-6 flex-shrink-0">
+        <Link to="/" className="font-serif font-bold text-[#5b63d3] text-xl tracking-tight">📖 White Nights</Link>
+      </header>
+      <main className="flex-1 flex items-center justify-center p-4">
+        <Outlet />
+      </main>
+    </div>
   );
 }
 
@@ -74,14 +124,15 @@ function App() {
   useEffect(() => { checkAuth(); }, [checkAuth]);
 
   return (
-    <>
-      <NavBar />
-      <Routes>
+    <Routes>
+      <Route element={<AuthShell />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+      </Route>
+      <Route element={<AppShell />}>
         <Route path="/u/:nickname" element={<ProfilePage />} />
         <Route path="/posts/:id" element={<PostPage />} />
         <Route path="/search" element={<SearchPage />} />
@@ -94,8 +145,8 @@ function App() {
         <Route path="/moderation" element={<PrivateRoute><ModerationPage /></PrivateRoute>} />
         <Route path="/" element={<PrivateRoute><FeedPage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </>
+      </Route>
+    </Routes>
   );
 }
 

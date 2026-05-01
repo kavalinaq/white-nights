@@ -1,0 +1,2 @@
+ALTER TABLE messages ALTER COLUMN text DROP NOT NULL;
+ALTER TABLE messages ADD COLUMN image_url TEXT;

@@ -10,7 +10,7 @@ export function FeedPage() {
   const [reportPostId, setReportPostId] = useState<number | null>(null);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="px-8 py-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="font-serif text-2xl font-bold text-[#1c1714]">Your Feed</h2>
         <button

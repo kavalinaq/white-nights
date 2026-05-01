@@ -31,6 +31,9 @@ public class Comment {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String text;
 
+    @Column(name = "parent_id")
+    private Long parentCommentId;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
