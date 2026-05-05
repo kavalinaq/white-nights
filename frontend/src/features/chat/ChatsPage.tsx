@@ -499,7 +499,7 @@ function ChatView({ chatId, chatName, isGroup }: { chatId: number; chatName: str
                     🗑
                   </button>
                 )}
-                <div className={`max-w-[72%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
+                <div className={`max-w-[100%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
                   isOwn
                     ? 'bg-[#5b63d3] text-white rounded-br-sm'
                     : 'bg-white border border-[#e8e2d9] text-[#2d2926] rounded-bl-sm'
