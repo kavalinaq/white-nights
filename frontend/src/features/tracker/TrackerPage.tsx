@@ -75,10 +75,10 @@ export function TrackerPage() {
 
   return (
     <div className="px-6 py-4">
-      <h2 className="font-serif text-xl font-bold text-[#1c1714] mb-3">Reading Tracker</h2>
+      <h2 className="font-serif text-xl font-bold text-[#1c1714] mb-3">READING TRACKER</h2>
 
       <div className="bg-white rounded-2xl border border-[#e8e2d9] shadow-sm p-4">
-        {/* Header: month nav + stats in one row */}
+
         <div className="flex items-center gap-3 mb-3 flex-wrap">
           <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e8e2d9] bg-white hover:border-[#5b63d3] cursor-pointer text-[#7a6f68] hover:text-[#5b63d3] transition flex-shrink-0">‹</button>
           <h3 className="font-serif font-bold text-[#1c1714] min-w-[9rem] text-center">{monthName}</h3>
@@ -92,7 +92,7 @@ export function TrackerPage() {
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <div className="font-bold text-sm text-[#5b63d3] leading-tight">{value}</div>
-                <div className="text-[10px] text-[#7a6f68]">{label}</div>
+                <div className="text-[15px] text-[#7a6f68]">{label}</div>
               </div>
             ))}
           </div>
@@ -112,7 +112,7 @@ export function TrackerPage() {
             const isFuture = new Date(year, month, day) > new Date(today.getFullYear(), today.getMonth(), today.getDate());
             return (
               <button key={idx} onClick={() => openDay(day)} disabled={isFuture}
-                className={`h-10 rounded-lg flex flex-col items-center justify-center text-xs transition
+                className={`h-17 rounded-lg flex flex-col items-center justify-center text-xs transition
                   ${isFuture ? 'bg-[#f8f5f0] text-[#d0c9c1] border border-[#ede8e0] cursor-not-allowed' :
                     hasEntry ? 'bg-[#5b63d3] text-white border border-[#5b63d3] cursor-pointer' :
                     `bg-white text-[#2d2926] border cursor-pointer hover:border-[#5b63d3] ${isToday ? 'border-[#5b63d3] border-2 font-bold' : 'border-[#e8e2d9]'}`}

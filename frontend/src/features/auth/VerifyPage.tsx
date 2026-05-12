@@ -20,13 +20,13 @@ export const VerifyPage = () => {
   }, [token]);
 
   const wrap = (icon: string, title: string, body: React.ReactNode) => (
-    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-md border border-[#e8e2d9] p-8 text-center">
-        <div className="text-4xl mb-3">{icon}</div>
-        <h1 className="font-serif text-xl font-bold text-[#1c1714] mb-3">{title}</h1>
-        <div className="text-[#7a6f68] text-sm space-y-2">{body}</div>
+      <div className="flex justify-center px-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-md border border-[#e2dcd5] p-12 text-center">
+          <div className="text-5xl mb-4">{icon}</div>
+          <h1 className="font-serif text-3xl font-bold text-[#1c1714] mb-3">{title}</h1>
+          <div className="text-[#7a6f68] text-base space-y-3">{body}</div>
+        </div>
       </div>
-    </div>
   );
 
   if (mutation.isPending) return wrap('⏳', 'Verifying your account…', <p>Please wait a moment.</p>);

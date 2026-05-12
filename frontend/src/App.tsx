@@ -20,88 +20,92 @@ import { ChatsPage } from './features/chat/ChatsPage';
 import { ModerationPage } from './features/moderation/ModerationPage';
 
 function TopBar() {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+    const { user, logout } = useAuthStore();
+    const navigate = useNavigate();
 
-  return (
-    <header className="h-14 bg-white border-b border-[#e8e2d9] shadow-sm flex items-center px-6 gap-4 flex-shrink-0 z-50">
-      <span className="font-serif font-bold text-[#5b63d3] text-xl tracking-tight">📖 White Nights</span>
-      <div className="ml-auto flex items-center gap-5">
-        {user ? (
-          <>
-            <Link
-              to={`/u/${user.nickname}`}
-              className="text-sm font-semibold text-[#2d2926] hover:text-[#5b63d3] transition-colors"
-            >
-              @{user.nickname}
-            </Link>
-            <Link to="/settings" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">
-              Settings
-            </Link>
-            <button
-              onClick={() => { logout(); navigate('/login'); }}
-              className="text-sm text-[#7a6f68] hover:text-[#5b63d3] bg-transparent border-none cursor-pointer p-0 transition-colors"
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Login</Link>
-            <Link
-              to="/register"
-              className="text-sm bg-[#5b63d3] text-white px-4 py-1.5 rounded-lg hover:bg-[#4951c4] transition-colors font-medium"
-            >
-              Join
-            </Link>
-          </>
-        )}
-      </div>
-    </header>
-  );
+    return (
+        <header className="relative h-16 bg-white border-b border-[#e8e2d9] shadow-sm flex items-center justify-end px-6 flex-shrink-0 z-50">
+            <span className="absolute left-1/2 transform -translate-x-1/2 font-serif font-bold text-black text-4xl tracking-tight">
+        WHITE NIGHTS
+      </span>
+
+            <div className="flex items-center gap-5">
+                {user ? (
+                    <>
+                        <Link to={`/u/${user.nickname}`} className="text-sm font-semibold text-[#2d2926] hover:text-[#5b63d3] transition-colors">
+                            @{user.nickname}
+                        </Link>
+                        <Link to="/settings" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">
+                            Settings
+                        </Link>
+                        <button onClick={() => { logout(); navigate('/login'); }}
+                                className="text-sm text-[#7a6f68] hover:text-[#5b63d3] bg-transparent border-none cursor-pointer p-0 transition-colors">
+                            Logout
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <Link to="/login" className="text-sm text-[#7a6f68] hover:text-[#5b63d3] transition-colors">Login</Link>
+                        <Link to="/register" className="text-sm bg-[#5b63d3] text-white px-4 py-1.5 rounded-lg hover:bg-[#4951c4] transition-colors font-medium">
+                            Join
+                        </Link>
+                    </>
+                )}
+            </div>
+        </header>
+    );
 }
-
 function SideNav() {
-  const { user } = useAuthStore();
-  const { data: chats } = useChats();
-  const { lastSeenAt } = useUnreadStore();
+    const { user } = useAuthStore();
+    const { data: chats } = useChats();
+    const { lastSeenAt } = useUnreadStore();
 
-  const unreadCount = user
-    ? (chats ?? []).filter((c) => isUnread(c.lastMessage, c.chatId, user.nickname, lastSeenAt)).length
-    : 0;
+    const unreadCount = user
+        ? (chats ?? []).filter((c) => isUnread(c.lastMessage, c.chatId, user.nickname, lastSeenAt)).length
+        : 0;
 
-  const cls = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-      isActive
-        ? 'bg-[#eef0ff] text-[#5b63d3]'
-        : 'text-[#7a6f68] hover:bg-[#f4f1ec] hover:text-[#2d2926]'
-    }`;
+    const cls = ({ isActive }: { isActive: boolean }) =>
+        `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            isActive
+                ? 'bg-[#eef0ff] text-[#5b63d3]'
+                : 'text-[#7a6f68] hover:bg-[#f4f1ec] hover:text-[#2d2926]'
+        }`;
 
-  return (
-    <aside className="w-56 flex-shrink-0 border-r border-[#e8e2d9] bg-white px-3 py-5 flex flex-col gap-1 overflow-y-auto">
-      <NavLink to="/" end className={cls}>📰 Feed</NavLink>
-      <NavLink to="/search" className={cls}>🔍 Search</NavLink>
-      {user && (
-        <>
-          <NavLink to={`/u/${user.nickname}/shelves`} className={cls}>📚 Shelves</NavLink>
-          <NavLink to="/tracker" className={cls}>📅 Tracker</NavLink>
-          <NavLink to="/chat" className={cls}>
-            <span>💬 Chat</span>
-            {unreadCount > 0 && (
-              <span className="ml-auto min-w-[18px] h-[18px] rounded-full bg-[#5b63d3] text-white text-[10px] font-bold flex items-center justify-center px-1">
-                {unreadCount}
-              </span>
-            )}
-          </NavLink>
-          {(user.role === 'moderator' || user.role === 'admin') && (
-            <NavLink to="/moderation" className={cls}>🛡️ Moderation</NavLink>
-          )}
-        </>
-      )}
-    </aside>
-  );
+    return (
+        <aside className="w-56 flex-shrink-0 border-r border-[#e8e2d9] bg-white flex flex-col h-full overflow-y-auto">
+            <div className="flex-1 px-3 py-5 flex flex-col gap-1">
+                <NavLink to="/" end className={cls}>📰 Feed</NavLink>
+                <NavLink to="/search" className={cls}>🔍 Search</NavLink>
+                {user && (
+                    <>
+                        <NavLink to={`/u/${user.nickname}/shelves`} className={cls}>📚 Shelves</NavLink>
+                        <NavLink to="/tracker" className={cls}>📅 Tracker</NavLink>
+                        <NavLink to="/chat" className={cls}>
+                            <span>💬 Chat</span>
+                            {unreadCount > 0 && (
+                                <span className="ml-auto min-w-[18px] h-[18px] rounded-full bg-[#5b63d3] text-white text-[10px] font-bold flex items-center justify-center px-1">
+                  {unreadCount}
+                </span>
+                            )}
+                        </NavLink>
+                        {(user.role === 'moderator' || user.role === 'admin') && (
+                            <NavLink to="/moderation" className={cls}>🛡️ Moderation</NavLink>
+                        )}
+                    </>
+                )}
+            </div>
+
+
+            <div className="px-3 pb-4 mt-auto">
+                <img
+                    src="/footer-image.jpg"
+                    alt="Footer decoration"
+                    className="w-full rounded-lg opacity-80 hover:opacity-100 transition"
+                />
+            </div>
+        </aside>
+    );
 }
-
 function AppShell() {
   return (
     <div className="flex flex-col h-screen bg-[#faf8f5]">
@@ -117,16 +121,23 @@ function AppShell() {
 }
 
 function AuthShell() {
-  return (
-    <div className="min-h-screen bg-[#faf8f5] flex flex-col">
-      <header className="h-14 bg-white border-b border-[#e8e2d9] flex items-center px-6 flex-shrink-0">
-        <Link to="/" className="font-serif font-bold text-[#5b63d3] text-xl tracking-tight">📖 White Nights</Link>
-      </header>
-      <main className="flex-1 flex items-center justify-center p-4">
-        <Outlet />
-      </main>
-    </div>
-  );
+    return (
+        <div className="min-h-screen bg-[#faf8f5] flex flex-col">
+            <header className="bg-white border-b border-[#e8e2d9] py-3 flex-shrink-0">
+                <div className="text-center px-4">
+                    <h1 className="font-serif font-bold text-black text-5xl sm:text-6xl md:text-6xl tracking-tight">
+                        WHITE NIGHTS
+                    </h1>
+                    <p className="text-sm text-[#7a6f68] mt-2 max-w-lg mx-auto">
+                        To stop reading books means to stop thinking
+                    </p>
+                </div>
+            </header>
+            <main className="flex-1 flex justify-center pt-12 pb-12 px-4">
+                <Outlet />
+            </main>
+        </div>
+    );
 }
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {

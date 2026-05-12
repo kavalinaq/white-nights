@@ -146,7 +146,6 @@ export function PostPage() {
 
   useEffect(() => {
     if (postId) recordView();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
 
   if (isLoading) return <div className="px-8 py-8 text-center text-[#7a6f68]">Loading…</div>;
@@ -173,7 +172,11 @@ export function PostPage() {
 
       <article className="mt-4 bg-white rounded-2xl border border-[#e8e2d9] shadow-sm overflow-hidden">
         {post.imageUrl && (
-          <img src={post.imageUrl} alt={post.title} className="w-full max-h-80 object-cover" />
+            <img
+                src={post.imageUrl}
+                alt={post.title}
+                className="block mx-auto max-w-150 h-auto rounded-t-2xl"
+            />
         )}
 
         <div className="p-6">
